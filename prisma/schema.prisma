@@ -14,6 +14,11 @@ enum Role {
   USER
 }
 
+enum MovieStatus {
+  ONGOING
+  COMPLETED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -22,4 +27,57 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Movie {
+  id          Int         @id @default(autoincrement())
+  slug        String      @unique
+  title       String
+  description String?
+  poster      String?
+  backdrop    String?
+
+  year        Int?
+  status      MovieStatus @default(ONGOING)
+  views       Int         @default(0)
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  episodes   Episode[]
+}
+
+model Episode {
+  id          Int       @id @default(autoincrement())
+  movieId    Int
+
+  name        String 
+  title       String?
+  episodeNumber Int
+  slug        String?  
+  
+
+  createdAt  DateTime  @default(now())
+
+  movie      Movie     @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  servers    Server[]
+
+  @@unique([movieId, episodeNumber])
+  @@index([movieId])
+}
+
+model Server {
+  id          Int       @id @default(autoincrement())
+  episodeId  Int
+
+  name        String    // VD: MixDrop, StreamTape, Okru
+  embedUrl   String    // iframe src
+  priority   Int       @default(0) // server chính load trước
+  isActive   Boolean   @default(true)
+
+  createdAt  DateTime  @default(now())
+
+  episode    Episode   @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([episodeId])
 }
