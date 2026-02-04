@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+---
+
+# TypeScript — Gõ kiểu cho hàm
+
+Luôn khai báo **type rõ ràng** cho tham số của hàm (callback, map/filter/find, handler…) để tránh lỗi `Parameter 'x' implicitly has an 'any' type` (TS7006).
+
+## Quy tắc
+
+- **Callback trong .map / .filter / .find / .reduce**: Gõ kiểu cho tham số, ví dụ `(item: (typeof arr)[number]) => ...` hoặc dùng type/interface có sẵn.
+- **Props của component**: Dùng `interface` hoặc `type` cho props.
+- **Handler (onClick, onSubmit…)**: Tham số dùng type từ React/SDK (vd. `React.MouseEvent<HTMLButtonElement>`).
+- **API/Prisma**: Dùng type inference khi cần: `(typeof data.items)[number]`, hoặc import type từ Prisma/API.
+
+## Ví dụ
+
+```typescript
+// ✅ GOOD — type rõ ràng
+const current = items.find((item: (typeof items)[number]) => item.id === id);
+
+// ✅ GOOD — interface
+interface User {
+  id: number;
+  name: string;
+}
+users.map((user: User) => user.name);
+
+// ❌ BAD — implicit any
+items.find((ep) => ep.id === id);
+```
+
+**Tóm tắt:** Mọi tham số hàm đều có type; không để TypeScript suy ra `any`.

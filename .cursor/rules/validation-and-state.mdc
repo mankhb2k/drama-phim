@@ -1,0 +1,54 @@
+---
+description: Dùng Zod cho validation, Zustand cho quản lý state
+alwaysApply: true
+---
+
+# Validation & State Management
+
+## Validation → Zod
+
+Mọi chỗ cần validate (form, API body, env, query params…) dùng **Zod**.
+
+- Định nghĩa schema bằng `z.object()`, `z.string()`, v.v.
+- Parse/validate bằng `.parse()` hoặc `.safeParse()`.
+- Dùng type inference: `type T = z.infer<typeof schema>`.
+
+```typescript
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+type LoginInput = z.infer<typeof loginSchema>;
+
+// Trong handler hoặc form submit
+const result = loginSchema.safeParse(body);
+if (!result.success) {
+  return { errors: result.error.flatten() };
+}
+```
+
+## State management → Zustand
+
+Mọi state cần quản lý toàn cục hoặc chia sẻ giữa nhiều component dùng **Zustand**.
+
+- Tạo store với `create()`.
+- Chỉ subscribe những slice cần dùng để tránh re-render thừa.
+- Có thể dùng `persist` nếu cần lưu (localStorage, v.v.).
+
+```typescript
+import { create } from "zustand";
+
+interface AppStore {
+  theme: "light" | "dark";
+  setTheme: (theme: "light" | "dark") => void;
+}
+
+export const useAppStore = create<AppStore>((set) => ({
+  theme: "light",
+  setTheme: (theme) => set({ theme }),
+}));
+```
+
+**Tóm tắt:** Validation = Zod. State management = Zustand.

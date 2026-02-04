@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const moreLinks = navLinks.slice(VISIBLE_MENU_COUNT);
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -55,15 +57,24 @@ export function Header() {
           {/* Hàng 2: 3 menu | Mở rộng | Account */}
           <div className="flex h-11 items-center justify-between border-t border-border/40">
             <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-              {visibleLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {visibleLinks.map((link) => {
+                const isActive = pathname === link.href;
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "shrink-0 px-2.5 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? " text-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
             <div className="flex shrink-0 items-center gap-1">
               <div className="relative">
@@ -89,16 +100,25 @@ export function Header() {
                       aria-hidden="true"
                     />
                     <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border bg-popover py-1 shadow-lg">
-                      {moreLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="block px-4 py-2.5 text-sm font-medium text-popover-foreground transition-colors hover:bg-accent"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                      {moreLinks.map((link) => {
+                        const isActive = pathname === link.href;
+
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "block px-4 py-2.5 text-sm font-medium transition-colors",
+                              isActive
+                                ? "bg-accent text-popover-foreground"
+                                : "text-popover-foreground hover:bg-accent"
+                            )}
+                          >
+                            {link.label}
+                          </Link>
+                        );
+                      })}
                     </div>
                   </>
                 )}
@@ -128,15 +148,24 @@ export function Header() {
             </Link>
 
             <nav className="flex items-center gap-4 sm:gap-6">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "text-sm font-medium transition-colors",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="flex items-center gap-2 sm:gap-4">

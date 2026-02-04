@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { MovieCard } from "@/components/ui/movie/MovieCard";
-import { MovieCardHero } from "@/components/ui/movie/MovieCardHero";
+import { MovieCard } from "@/components/movie/MovieCard";
+import { MovieCardHero } from "@/components/movie/MovieCardHero";
 import { Button } from "@/components/ui/button";
 
 // Mock data - thay bằng data từ Prisma/API sau
@@ -16,27 +16,117 @@ const featuredMovie = {
 };
 
 const trendingMovies = [
-  { slug: "tu-than", title: "Tử Thần", year: 2024, episodes: 20, status: "ONGOING" as const },
-  { slug: "hon-ma", title: "Hồn Ma", year: 2024, episodes: 16, status: "COMPLETED" as const },
-  { slug: "chiec-bong", title: "Chiếc Bóng", year: 2023, episodes: 24, status: "COMPLETED" as const },
-  { slug: "bong-toi", title: "Bóng Tối", year: 2024, episodes: 12, status: "ONGOING" as const },
-  { slug: "dem-dai", title: "Đêm Dài", year: 2023, episodes: 18, status: "COMPLETED" as const },
+  {
+    slug: "tu-than",
+    title: "Tử Thần",
+    year: 2024,
+    episodes: 20,
+    status: "ONGOING" as const,
+  },
+  {
+    slug: "hon-ma",
+    title: "Hồn Ma",
+    year: 2024,
+    episodes: 16,
+    status: "COMPLETED" as const,
+  },
+  {
+    slug: "chiec-bong",
+    title: "Chiếc Bóng",
+    year: 2023,
+    episodes: 24,
+    status: "COMPLETED" as const,
+  },
+  {
+    slug: "bong-toi",
+    title: "Bóng Tối",
+    year: 2024,
+    episodes: 12,
+    status: "ONGOING" as const,
+  },
+  {
+    slug: "dem-dai",
+    title: "Đêm Dài",
+    year: 2023,
+    episodes: 18,
+    status: "COMPLETED" as const,
+  },
 ];
 
 const newUpdates = [
-  { slug: "nu-hon", title: "Nụ Hôn Định Mệnh", year: 2024, episodes: 8, status: "ONGOING" as const },
-  { slug: "song-sinh", title: "Song Sinh", year: 2024, episodes: 6, status: "ONGOING" as const },
-  { slug: "ao-anh", title: "Ảo Ảnh", year: 2024, episodes: 10, status: "ONGOING" as const },
-  { slug: "gio-mua", title: "Gió Mùa", year: 2024, episodes: 4, status: "ONGOING" as const },
-  { slug: "canh-bac", title: "Cánh Bắc", year: 2023, episodes: 16, status: "COMPLETED" as const },
+  {
+    slug: "nu-hon",
+    title: "Nụ Hôn Định Mệnh",
+    year: 2024,
+    episodes: 8,
+    status: "ONGOING" as const,
+  },
+  {
+    slug: "song-sinh",
+    title: "Song Sinh",
+    year: 2024,
+    episodes: 6,
+    status: "ONGOING" as const,
+  },
+  {
+    slug: "ao-anh",
+    title: "Ảo Ảnh",
+    year: 2024,
+    episodes: 10,
+    status: "ONGOING" as const,
+  },
+  {
+    slug: "gio-mua",
+    title: "Gió Mùa",
+    year: 2024,
+    episodes: 4,
+    status: "ONGOING" as const,
+  },
+  {
+    slug: "canh-bac",
+    title: "Cánh Bắc",
+    year: 2023,
+    episodes: 16,
+    status: "COMPLETED" as const,
+  },
 ];
 
 const popularCompleted = [
-  { slug: "hai-phuong", title: "Hai Phương", year: 2023, episodes: 32, status: "COMPLETED" as const },
-  { slug: "gioi-han", title: "Giới Hạn", year: 2023, episodes: 24, status: "COMPLETED" as const },
-  { slug: "tinh-yeu", title: "Tình Yêu Và Thù Hận", year: 2022, episodes: 40, status: "COMPLETED" as const },
-  { slug: "bach-duong", title: "Bạch Dương", year: 2023, episodes: 20, status: "COMPLETED" as const },
-  { slug: "hoang-hon", title: "Hoàng Hôn", year: 2022, episodes: 28, status: "COMPLETED" as const },
+  {
+    slug: "hai-phuong",
+    title: "Hai Phương",
+    year: 2023,
+    episodes: 32,
+    status: "COMPLETED" as const,
+  },
+  {
+    slug: "gioi-han",
+    title: "Giới Hạn",
+    year: 2023,
+    episodes: 24,
+    status: "COMPLETED" as const,
+  },
+  {
+    slug: "tinh-yeu",
+    title: "Tình Yêu Và Thù Hận",
+    year: 2022,
+    episodes: 40,
+    status: "COMPLETED" as const,
+  },
+  {
+    slug: "bach-duong",
+    title: "Bạch Dương",
+    year: 2023,
+    episodes: 20,
+    status: "COMPLETED" as const,
+  },
+  {
+    slug: "hoang-hon",
+    title: "Hoàng Hôn",
+    year: 2022,
+    episodes: 28,
+    status: "COMPLETED" as const,
+  },
 ];
 
 function SectionHeader({

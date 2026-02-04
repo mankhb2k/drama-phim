@@ -122,7 +122,10 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-8 sm:flex-row">
-          <p className="text-center text-sm text-muted-foreground sm:text-left">
+          <p
+            className="text-center text-sm text-muted-foreground sm:text-left"
+            suppressHydrationWarning
+          >
             © {currentYear} Drama Phim. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">

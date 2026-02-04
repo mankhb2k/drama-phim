@@ -31,7 +31,7 @@ export function MovieCard({
 
   return (
     <Link
-      href={`/phim/${slug}`}
+      href={`/movies/${slug}`}
       className={cn(
         "group block shrink-0 transition-transform active:scale-[0.98]",
         variant === "default" && "w-[140px] sm:w-[160px]",
@@ -89,9 +89,7 @@ export function MovieCard({
         <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-foreground group-hover:text-primary">
           {title}
         </h3>
-        {year && (
-          <p className="text-xs text-muted-foreground">{year}</p>
-        )}
+        {year && <p className="text-xs text-muted-foreground">{year}</p>}
       </div>
     </Link>
   );

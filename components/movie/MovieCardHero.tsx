@@ -25,7 +25,7 @@ export function MovieCardHero({
   const backdropUrl = backdrop || undefined;
 
   return (
-    <Link href={`/phim/${slug}`} className="group block">
+    <Link href={`/movies/${slug}`} className="group block">
       <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden rounded-2xl sm:aspect-[21/9] sm:min-h-[280px] md:min-h-[320px]">
         {backdropUrl ? (
           <Image
@@ -37,7 +37,10 @@ export function MovieCardHero({
             priority
           />
         ) : (
-          <div className="size-full" style={{ background: placeholderBackdrop }} />
+          <div
+            className="size-full"
+            style={{ background: placeholderBackdrop }}
+          />
         )}
 
         {/* Gradient overlay */}
