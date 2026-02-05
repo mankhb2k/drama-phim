@@ -119,7 +119,13 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Giữ trang không thu nhỏ dưới 384px; viewport nhỏ hơn sẽ có scroll ngang */
+  html {
+    min-width: 24rem; /* 384px = min-w-sm */
+  }
   body {
+    min-width: 24rem;
+    min-height: 100vh;
     @apply bg-background text-foreground;
   }
 }

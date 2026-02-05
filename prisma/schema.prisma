@@ -29,6 +29,8 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+
+
 model Movie {
   id            Int     @id @default(autoincrement())
   slug          String  @unique
@@ -45,6 +47,8 @@ model Movie {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  genres   Genre[]
+  tags     Tag[]
   episodes Episode[]
 
   @@index([slug])
@@ -81,4 +85,26 @@ model Server {
   episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
 
   @@index([episodeId])
+}
+
+model Genre {
+  id    Int    @id @default(autoincrement())
+  slug  String @unique
+  name  String
+  order Int    @default(0)
+
+  movies Movie[]
+
+  @@index([slug])
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  slug  String @unique // tag
+  name  String
+  order Int    @default(0)
+
+  movies Movie[]
+
+  @@index([slug])
 }
