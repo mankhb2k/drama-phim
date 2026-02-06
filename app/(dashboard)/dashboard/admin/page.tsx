@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { Film, FolderOpen, Tags, PlusCircle, ArrowRight } from "lucide-react";
+import {
+  Film,
+  FolderOpen,
+  Tags,
+  Users,
+  PlusCircle,
+  ArrowRight,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 
@@ -16,11 +23,13 @@ export default async function DashboardOverviewPage() {
     prisma.genre.count(),
     tagCountPromise,
     prisma.episode.count(),
+    prisma.user.count(),
   ]);
   const movieCount = results[0].status === "fulfilled" ? results[0].value : 0;
   const genreCount = results[1].status === "fulfilled" ? results[1].value : 0;
   const tagCount = results[2].status === "fulfilled" ? results[2].value : 0;
   const episodeCount = results[3].status === "fulfilled" ? results[3].value : 0;
+  const userCount = results[4].status === "fulfilled" ? results[4].value : 0;
 
   const cards = [
     {
@@ -51,6 +60,13 @@ export default async function DashboardOverviewPage() {
       icon: Film,
       desc: "Tổng tập phim",
     },
+    {
+      title: "User",
+      value: userCount,
+      href: "/dashboard/admin/users",
+      icon: Users,
+      desc: "Quản lý user",
+    },
   ] as const;
 
   return (
@@ -64,7 +80,7 @@ export default async function DashboardOverviewPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {cards.map((card) => {
           const Icon = card.icon;
           return (

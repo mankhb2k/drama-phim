@@ -48,8 +48,11 @@ function canAccessRoute(pathname: string, role: AuthRole): boolean {
   return false;
 }
 
-/** API dashboard/admin chỉ ADMIN; API dashboard/editor cho ADMIN + EDITOR; còn lại chỉ ADMIN */
+/** API: users chỉ ADMIN; admin chỉ ADMIN; editor cho ADMIN+EDITOR; còn lại ADMIN+EDITOR */
 function canAccessDashboardApi(pathname: string, role: AuthRole): boolean {
+  if (pathname.startsWith("/api/dashboard/users")) {
+    return role === "ADMIN";
+  }
   if (pathname.startsWith("/api/dashboard/admin")) {
     return role === "ADMIN";
   }

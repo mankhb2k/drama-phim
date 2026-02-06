@@ -37,7 +37,7 @@ export function TongHopSection() {
 
   const fetchPage = useCallback(async (offset: number, append: boolean) => {
     const res = await fetch(
-      `/api/movies?limit=${PAGE_SIZE}&offset=${offset}&orderBy=createdAt`
+      `/api/movies?limit=${PAGE_SIZE}&offset=${offset}&orderBy=createdAt`,
     );
     if (!res.ok) return;
     const data: ApiResponse = await res.json();

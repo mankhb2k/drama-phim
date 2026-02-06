@@ -7,15 +7,17 @@ import {
   Film,
   FolderOpen,
   Tags,
+  Users,
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
+  { href: "/dashboard/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/dashboard/admin/movies", label: "Danh sách phim", icon: Film },
   { href: "/dashboard/admin/genres", label: "Thể loại", icon: FolderOpen },
   { href: "/dashboard/admin/tags", label: "Tag", icon: Tags },
+  { href: "/dashboard/admin/users", label: "Quản lý user", icon: Users },
 ] as const;
 
 export function DashboardSidebar() {
@@ -32,8 +34,8 @@ export function DashboardSidebar() {
       <nav className="flex-1 space-y-0.5 p-3">
         {navItems.map((item) => {
           const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
+            item.href === "/dashboard/admin"
+              ? pathname === "/dashboard/admin"
               : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (

@@ -50,14 +50,14 @@ export function Header() {
         const count = Math.floor(navWidth / ESTIMATED_GENRE_WIDTH_MOBILE);
         const clamped = Math.max(
           4, // sm mobile: tối thiểu 4 item
-          Math.min(genreLinks.length, count)
+          Math.min(genreLinks.length, count),
         );
         setVisibleGenreCount(clamped);
       } else {
         const count = Math.floor(w / ESTIMATED_GENRE_WIDTH_DESKTOP);
         const clamped = Math.max(
           MIN_VISIBLE_GENRES,
-          Math.min(genreLinks.length, count)
+          Math.min(genreLinks.length, count),
         );
         setVisibleGenreCount(clamped);
       }
@@ -93,7 +93,7 @@ export function Header() {
         <ChevronDown
           className={cn(
             "size-5 transition-transform",
-            genreMenuOpen && "rotate-180"
+            genreMenuOpen && "rotate-180",
           )}
         />
       </button>
@@ -114,7 +114,7 @@ export function Header() {
                   "block px-4 py-2.5 text-sm font-medium transition-colors",
                   isGenreActive(link.href)
                     ? "bg-accent text-popover-foreground"
-                    : "text-popover-foreground hover:bg-accent"
+                    : "text-popover-foreground hover:bg-accent",
                 )}
               >
                 {link.label}
@@ -169,7 +169,7 @@ export function Header() {
                     "shrink-0 whitespace-nowrap px-2.5 py-2 text-sm font-medium transition-colors",
                     isGenreActive(link.href)
                       ? "text-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
                   {link.label}
@@ -182,7 +182,7 @@ export function Header() {
                 href="/profile"
                 className={cn(
                   "flex size-9 items-center justify-center rounded-full transition-colors hover:bg-accent hover:text-foreground",
-                  isProfileActive ? "text-foreground" : "text-muted-foreground"
+                  isProfileActive ? "text-foreground" : "text-muted-foreground",
                 )}
                 aria-label={user ? "Tài khoản" : "Đăng nhập / Đăng ký"}
               >
@@ -222,7 +222,7 @@ export function Header() {
               href="/profile"
               className={cn(
                 "flex shrink-0 items-center justify-center rounded-full p-2 transition-colors hover:bg-accent hover:text-foreground",
-                isProfileActive ? "text-foreground" : "text-muted-foreground"
+                isProfileActive ? "text-foreground" : "text-muted-foreground",
               )}
               aria-label={user ? "Tài khoản" : "Đăng nhập / Đăng ký"}
             >
@@ -243,7 +243,7 @@ export function Header() {
                     "shrink-0 whitespace-nowrap px-2.5 py-2 text-sm font-medium transition-colors",
                     isGenreActive(link.href)
                       ? "text-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
                   {link.label}
