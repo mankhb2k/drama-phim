@@ -29,7 +29,6 @@ export default async function MovieDetailPage({
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
-      {/* Hero: poster + info */}
       <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
         <div className="relative aspect-[2/3] w-full max-w-[280px] shrink-0 overflow-hidden rounded-xl bg-muted sm:max-w-[240px]">
           {movie.poster ? (
@@ -99,7 +98,6 @@ export default async function MovieDetailPage({
         </div>
       </div>
 
-      {/* Danh sách tập */}
       {movie.episodes.length > 0 && (
         <section>
           <h2 className="mb-3 text-lg font-semibold text-foreground">

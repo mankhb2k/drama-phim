@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-/** GET /api/movies — Danh sách phim (query: status?, limit?, offset?) */
+/** GET /api/movies — Danh sách phim (query: status?, limit?, offset?, orderBy?) */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const limit = Math.min(Number(searchParams.get("limit")) || 20, 50);
     const offset = Number(searchParams.get("offset")) || 0;
+    const orderByParam = searchParams.get("orderBy") ?? "updatedAt";
 
     const where =
       status === "ONGOING" || status === "COMPLETED"
         ? { status: status as "ONGOING" | "COMPLETED" }
         : {};
 
+    const orderBy =
+      orderByParam === "createdAt"
+        ? { createdAt: "desc" as const }
+        : { updatedAt: "desc" as const };
+
     const [movies, total] = await Promise.all([
       prisma.movie.findMany({
         where,
-        orderBy: { updatedAt: "desc" },
+        orderBy,
         take: limit,
         skip: offset,
         select: {

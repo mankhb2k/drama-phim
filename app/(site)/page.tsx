@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { MovieCard } from "@/components/movie/MovieCard";
 import { MovieCardHero } from "@/components/movie/MovieCardHero";
+import { TongHopSection } from "@/components/home/TongHopSection";
 import { Button } from "@/components/ui/button";
 
-// Mock data - thay bằng data từ Prisma/API sau
 const featuredMovie = {
   slug: "trum-quy-duong",
   title: "Trùm Quỷ Dương",
@@ -91,44 +91,6 @@ const newUpdates = [
   },
 ];
 
-const popularCompleted = [
-  {
-    slug: "hai-phuong",
-    title: "Hai Phương",
-    year: 2023,
-    episodes: 32,
-    status: "COMPLETED" as const,
-  },
-  {
-    slug: "gioi-han",
-    title: "Giới Hạn",
-    year: 2023,
-    episodes: 24,
-    status: "COMPLETED" as const,
-  },
-  {
-    slug: "tinh-yeu",
-    title: "Tình Yêu Và Thù Hận",
-    year: 2022,
-    episodes: 40,
-    status: "COMPLETED" as const,
-  },
-  {
-    slug: "bach-duong",
-    title: "Bạch Dương",
-    year: 2023,
-    episodes: 20,
-    status: "COMPLETED" as const,
-  },
-  {
-    slug: "hoang-hon",
-    title: "Hoàng Hôn",
-    year: 2022,
-    episodes: 28,
-    status: "COMPLETED" as const,
-  },
-];
-
 function SectionHeader({
   title,
   href,
@@ -185,7 +147,6 @@ function MovieRow({
 export default function HomePage() {
   return (
     <div className="flex flex-col gap-10 sm:gap-12">
-      {/* Hero - Featured Movie */}
       <section className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8">
         <MovieCardHero
           slug={featuredMovie.slug}
@@ -196,8 +157,6 @@ export default function HomePage() {
           episodes={featuredMovie.episodes}
         />
       </section>
-
-      {/* Trending */}
       <section>
         <SectionHeader
           title={
@@ -212,24 +171,13 @@ export default function HomePage() {
           <MovieRow movies={trendingMovies} />
         </div>
       </section>
-
-      {/* New Updates */}
       <section>
         <SectionHeader title="Mới cập nhật" href="/phim-bo?sort=latest" />
         <div className="mt-4">
           <MovieRow movies={newUpdates} />
         </div>
       </section>
-
-      {/* Popular Completed */}
-      <section>
-        <SectionHeader title="Đã hoàn thành" href="/phim-bo?status=completed" />
-        <div className="mt-4">
-          <MovieRow movies={popularCompleted} />
-        </div>
-      </section>
-
-      {/* CTA */}
+      <TongHopSection />
       <section className="rounded-2xl bg-muted/50 p-6 text-center sm:p-8">
         <h2 className="text-xl font-bold text-foreground sm:text-2xl">
           Không tìm thấy phim bạn muốn?

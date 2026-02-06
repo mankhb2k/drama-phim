@@ -37,7 +37,6 @@ export default async function WatchPage({ params }: WatchPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Breadcrumb / Back */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link
           href={`/movies/${movie.slug}`}
@@ -53,7 +52,6 @@ export default async function WatchPage({ params }: WatchPageProps) {
         </span>
       </div>
 
-      {/* Player */}
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
         {primaryServer?.embedUrl ? (
           <iframe
@@ -70,7 +68,6 @@ export default async function WatchPage({ params }: WatchPageProps) {
         )}
       </div>
 
-      {/* Chuyển tập */}
       <EpisodeSwitcher
         movieSlug={movie.slug}
         movieTitle={movie.title}
@@ -81,7 +78,6 @@ export default async function WatchPage({ params }: WatchPageProps) {
         }))}
       />
 
-      {/* Các server khác (nếu có) */}
       {otherServers.length > 0 && (
         <div className="rounded-xl border border-border bg-muted/30 p-4">
           <p className="mb-2 text-sm font-medium text-muted-foreground">
