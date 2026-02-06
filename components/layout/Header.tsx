@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth";
 
 const genreLinks = [
   { href: "/", label: "Home" },
@@ -28,6 +29,7 @@ const ESTIMATED_GENRE_WIDTH_DESKTOP = 92;
 const MOBILE_RIGHT_WIDTH = 36 + 36 + 8;
 
 export function Header() {
+  const user = useAuthStore((s) => s.user);
   const [genreMenuOpen, setGenreMenuOpen] = useState(false);
   const [visibleGenreCount, setVisibleGenreCount] = useState(10);
   const genreNavRefMobile = useRef<HTMLDivElement>(null);
@@ -75,6 +77,9 @@ export function Header() {
 
   const isGenreActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
+
+  const isProfileActive =
+    pathname === "/profile" || pathname.startsWith("/profile/");
 
   const dropdownContent = moreGenres.length > 0 && (
     <>
@@ -174,9 +179,12 @@ export function Header() {
             <div className="relative flex shrink-0 items-center gap-0.5">
               {dropdownContent}
               <Link
-                href="/login"
-                className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                aria-label="Đăng nhập"
+                href="/profile"
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-full transition-colors hover:bg-accent hover:text-foreground",
+                  isProfileActive ? "text-foreground" : "text-muted-foreground"
+                )}
+                aria-label={user ? "Tài khoản" : "Đăng nhập / Đăng ký"}
               >
                 <User className="size-5" />
               </Link>
@@ -211,9 +219,12 @@ export function Header() {
               </button>
             </div>
             <Link
-              href="/login"
-              className="flex shrink-0 items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Đăng nhập"
+              href="/profile"
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-full p-2 transition-colors hover:bg-accent hover:text-foreground",
+                isProfileActive ? "text-foreground" : "text-muted-foreground"
+              )}
+              aria-label={user ? "Tài khoản" : "Đăng nhập / Đăng ký"}
             >
               <User className="size-6" />
             </Link>

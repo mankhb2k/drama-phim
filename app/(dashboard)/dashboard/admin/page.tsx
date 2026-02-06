@@ -26,28 +26,28 @@ export default async function DashboardOverviewPage() {
     {
       title: "Phim",
       value: movieCount,
-      href: "/dashboard/movies",
+      href: "/dashboard/admin/movies",
       icon: Film,
       desc: "Quản lý danh sách phim",
     },
     {
       title: "Thể loại",
       value: genreCount,
-      href: "/dashboard/genres",
+      href: "/dashboard/admin/genres",
       icon: FolderOpen,
       desc: "Quản lý thể loại",
     },
     {
       title: "Tag",
       value: tagCount,
-      href: "/dashboard/tags",
+      href: "/dashboard/admin/tags",
       icon: Tags,
       desc: "Quản lý tag",
     },
     {
       title: "Tổng số tập",
       value: episodeCount,
-      href: "/dashboard/movies",
+      href: "/dashboard/admin/movies",
       icon: Film,
       desc: "Tổng tập phim",
     },
@@ -93,7 +93,7 @@ export default async function DashboardOverviewPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <Button asChild>
             <Link
-              href="/dashboard/movies/new"
+              href="/dashboard/admin/movies/new"
               className="inline-flex items-center gap-2"
             >
               <PlusCircle className="size-4" />
@@ -102,7 +102,7 @@ export default async function DashboardOverviewPage() {
           </Button>
           <Button variant="outline" asChild>
             <Link
-              href="/dashboard/movies"
+              href="/dashboard/admin/movies"
               className="inline-flex items-center gap-2"
             >
               Xem danh sách phim

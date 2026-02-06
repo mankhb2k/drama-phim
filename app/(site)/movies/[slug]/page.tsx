@@ -5,6 +5,7 @@ import { Play, Calendar, Film } from "lucide-react";
 import { getMockMovieBySlug } from "@/lib/mock-data";
 import { buildWatchHref } from "@/lib/watch-slug";
 import { cn } from "@/lib/utils";
+import { FavoriteButton } from "@/components/movie/FavoriteButton";
 import type { MockEpisode } from "@/lib/mock-data";
 
 const placeholderPoster =
@@ -86,15 +87,18 @@ export default async function MovieDetailPage({
               {movie.description}
             </p>
           )}
-          {firstEpisode && (
-            <Link
-              href={watchHref}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Play className="size-5 fill-current" />
-              Xem phim
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {firstEpisode && (
+              <Link
+                href={watchHref}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Play className="size-5 fill-current" />
+                Xem phim
+              </Link>
+            )}
+            <FavoriteButton slug={slug} />
+          </div>
         </div>
       </div>
 

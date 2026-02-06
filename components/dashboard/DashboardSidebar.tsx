@@ -13,9 +13,9 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
-  { href: "/dashboard/movies", label: "Danh sách phim", icon: Film },
-  { href: "/dashboard/genres", label: "Thể loại", icon: FolderOpen },
-  { href: "/dashboard/tags", label: "Tag", icon: Tags },
+  { href: "/dashboard/admin/movies", label: "Danh sách phim", icon: Film },
+  { href: "/dashboard/admin/genres", label: "Thể loại", icon: FolderOpen },
+  { href: "/dashboard/admin/tags", label: "Tag", icon: Tags },
 ] as const;
 
 export function DashboardSidebar() {

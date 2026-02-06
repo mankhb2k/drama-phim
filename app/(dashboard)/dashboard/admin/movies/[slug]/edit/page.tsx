@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Genre = { id: number; slug: string; name: string };
@@ -21,23 +22,52 @@ type EpisodeRow = {
   servers: ServerRow[];
 };
 
+type MovieResponse = {
+  id: number;
+  slug: string;
+  title: string;
+  originalTitle: string | null;
+  description: string | null;
+  poster: string | null;
+  backdrop: string | null;
+  year: number | null;
+  status: "ONGOING" | "COMPLETED";
+  genres: Genre[];
+  tags: Tag[];
+  episodes: Array<{
+    id: number;
+    episodeNumber: number;
+    name: string;
+    servers: Array<{
+      id: number;
+      name: string;
+      embedUrl: string;
+      priority: number;
+    }>;
+  }>;
+};
+
 function genId() {
   return Math.random().toString(36).slice(2);
 }
 
-export default function DashboardNewMoviePage() {
+export default function EditMoviePage() {
+  const params = useParams<{ slug: string }>();
+  const router = useRouter();
+  const slug = params?.slug as string | undefined;
+
   const [genres, setGenres] = useState<Genre[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
+  const [slugInput, setSlugInput] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
   const [description, setDescription] = useState("");
   const [poster, setPoster] = useState("");
@@ -48,29 +78,60 @@ export default function DashboardNewMoviePage() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
 
-  const fetchOptions = useCallback(async () => {
+  const fetchMovieAndOptions = useCallback(async () => {
+    if (!slug) return;
     try {
-      const [genresRes, tagsRes] = await Promise.all([
+      const [movieRes, genresRes, tagsRes] = await Promise.all([
+        fetch(`/api/dashboard/movies/${encodeURIComponent(slug)}`),
         fetch("/api/dashboard/genres"),
         fetch("/api/dashboard/tags"),
       ]);
+      if (!movieRes.ok) {
+        setMessage({ type: "error", text: "Không tìm thấy phim." });
+        setLoading(false);
+        return;
+      }
+      const movie: MovieResponse = await movieRes.json();
       if (genresRes.ok) setGenres(await genresRes.json());
       if (tagsRes.ok) setTags(await tagsRes.json());
+
+      setTitle(movie.title);
+      setSlugInput(movie.slug);
+      setOriginalTitle(movie.originalTitle ?? "");
+      setDescription(movie.description ?? "");
+      setPoster(movie.poster ?? "");
+      setBackdrop(movie.backdrop ?? "");
+      setYear(movie.year != null ? String(movie.year) : "");
+      setStatus(movie.status);
+      setGenreIds(movie.genres.map((g) => g.id));
+      setTagIds(movie.tags.map((t) => t.id));
+      setEpisodes(
+        movie.episodes.map((ep) => ({
+          id: genId(),
+          episodeNumber: ep.episodeNumber,
+          name: ep.name ?? "",
+          servers: ep.servers.map((s) => ({
+            id: genId(),
+            name: s.name,
+            embedUrl: s.embedUrl,
+            priority: s.priority,
+          })),
+        }))
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [slug]);
 
   useEffect(() => {
-    fetchOptions();
-  }, [fetchOptions]);
+    fetchMovieAndOptions();
+  }, [fetchMovieAndOptions]);
 
   const toggleGenre = (id: number) => {
     setGenreIds((prev) =>
       prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
     );
   };
-
   const toggleTag = (id: number) => {
     setTagIds((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
@@ -84,19 +145,12 @@ export default function DashboardNewMoviePage() {
         : Math.max(...episodes.map((e) => e.episodeNumber)) + 1;
     setEpisodes((prev) => [
       ...prev,
-      {
-        id: genId(),
-        episodeNumber: nextNum,
-        name: "",
-        servers: [],
-      },
+      { id: genId(), episodeNumber: nextNum, name: "", servers: [] },
     ]);
   };
-
   const removeEpisode = (id: string) => {
     setEpisodes((prev) => prev.filter((e) => e.id !== id));
   };
-
   const updateEpisode = (
     id: string,
     field: keyof EpisodeRow,
@@ -106,7 +160,6 @@ export default function DashboardNewMoviePage() {
       prev.map((e) => (e.id === id ? { ...e, [field]: value } : e))
     );
   };
-
   const addServer = (episodeId: string) => {
     setEpisodes((prev) =>
       prev.map((e) =>
@@ -127,7 +180,6 @@ export default function DashboardNewMoviePage() {
       )
     );
   };
-
   const removeServer = (episodeId: string, serverId: string) => {
     setEpisodes((prev) =>
       prev.map((e) =>
@@ -137,7 +189,6 @@ export default function DashboardNewMoviePage() {
       )
     );
   };
-
   const updateServer = (
     episodeId: string,
     serverId: string,
@@ -160,12 +211,13 @@ export default function DashboardNewMoviePage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!slug) return;
     setMessage(null);
     setSubmitting(true);
     try {
       const payload = {
         title: title.trim(),
-        slug: slug.trim() || undefined,
+        slug: slugInput.trim() || undefined,
         originalTitle: originalTitle.trim() || undefined,
         description: description.trim() || undefined,
         poster: poster.trim() || undefined,
@@ -186,102 +238,98 @@ export default function DashboardNewMoviePage() {
             })),
         })),
       };
-      const res = await fetch("/api/dashboard/movies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `/api/dashboard/movies/${encodeURIComponent(slug)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setMessage({
           type: "error",
-          text: data.error ?? "Thêm phim thất bại.",
+          text: data.error ?? "Cập nhật thất bại.",
         });
         return;
       }
-      setMessage({
-        type: "success",
-        text: `Thêm phim thành công: "${data.title}" (${data.slug}${
-          data.episodes?.length ? `, ${data.episodes.length} tập` : ""
-        }).`,
-      });
-      setSubmitSuccess(true);
-      setTitle("");
-      setSlug("");
-      setOriginalTitle("");
-      setDescription("");
-      setPoster("");
-      setBackdrop("");
-      setYear("");
-      setStatus("ONGOING");
-      setGenreIds([]);
-      setTagIds([]);
-      setEpisodes([]);
+      setMessage({ type: "success", text: "Cập nhật phim thành công." });
+      if (data.slug && data.slug !== slug) {
+        router.replace(`/dashboard/admin/movies/${data.slug}/edit`);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleAddNew = () => {
-    setSubmitSuccess(false);
+  const handleDelete = async () => {
+    if (!slug) return;
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn xóa phim này? Hành động không thể hoàn tác."
+    );
+    if (!confirmed) return;
+    setDeleting(true);
     setMessage(null);
+    try {
+      const res = await fetch(
+        `/api/dashboard/movies/${encodeURIComponent(slug)}`,
+        {
+          method: "DELETE",
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error ?? "Xóa phim thất bại." });
+        return;
+      }
+      router.push("/dashboard/admin/movies");
+      router.refresh();
+    } finally {
+      setDeleting(false);
+    }
   };
+
+  if (!slug) {
+    return <div className="text-muted-foreground">Thiếu slug phim.</div>;
+  }
 
   if (loading) {
     return <p className="text-muted-foreground">Đang tải...</p>;
   }
 
-  if (submitSuccess && message?.type === "success") {
-    return (
-      <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-            Thêm phim
-          </h1>
-        </div>
-        <div className="flex max-w-2xl flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="rounded-md bg-green-500/10 text-green-700 dark:text-green-400">
-            <p className="px-3 py-2 text-sm font-medium">{message.text}</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              onClick={handleAddNew}
-              className="inline-flex items-center gap-2"
-            >
-              <Plus className="size-4" />
-              Thêm phim mới
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/movies">Trở về danh sách phim</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-          Thêm phim
-        </h1>
-        <p className="text-muted-foreground">
-          Điền thông tin phim và (tùy chọn) thêm tập với link server xem.
-        </p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/dashboard/admin/movies" aria-label="Trở về danh sách phim">
+            <ArrowLeft className="size-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+            Sửa phim
+          </h1>
+          <p className="text-muted-foreground">{slug}</p>
+        </div>
       </div>
 
       <form
         onSubmit={handleSubmit}
         className="flex max-w-3xl flex-col gap-8 rounded-xl border border-border bg-card p-6 shadow-sm"
       >
-        {message && message.type === "error" && (
-          <div className="rounded-md bg-destructive/10 text-destructive">
+        {message && (
+          <div
+            className={
+              message.type === "success"
+                ? "rounded-md bg-green-500/10 text-green-700 dark:text-green-400"
+                : "rounded-md bg-destructive/10 text-destructive"
+            }
+          >
             <p className="px-3 py-2 text-sm font-medium">{message.text}</p>
           </div>
         )}
 
-        {/* Thông tin phim */}
         <section className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-foreground">
             Thông tin phim
@@ -309,13 +357,13 @@ export default function DashboardNewMoviePage() {
                 htmlFor="slug"
                 className="text-sm font-medium text-foreground"
               >
-                Slug (để trống = tự tạo từ tiêu đề)
+                Slug
               </label>
               <input
                 id="slug"
                 type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                value={slugInput}
+                onChange={(e) => setSlugInput(e.target.value)}
                 className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                 placeholder="VD: trum-quy-duong"
               />
@@ -474,7 +522,6 @@ export default function DashboardNewMoviePage() {
           </div>
         </section>
 
-        {/* Tập phim + Link server */}
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">
@@ -492,14 +539,13 @@ export default function DashboardNewMoviePage() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Mỗi tập có thể có nhiều server (VD: MixDrop, StreamTape). Điền tên
-            server và link embed (iframe src).
+            Mỗi tập có thể có nhiều server. Điền tên server và link embed
+            (iframe src).
           </p>
 
           {episodes.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-muted-foreground">
-              Chưa thêm tập nào. Bấm &quot;Thêm tập&quot; để thêm tập và link
-              server.
+              Chưa có tập. Bấm &quot;Thêm tập&quot; để thêm.
             </div>
           ) : (
             <div className="flex flex-col gap-6">
@@ -531,7 +577,7 @@ export default function DashboardNewMoviePage() {
                       onChange={(e) =>
                         updateEpisode(ep.id, "name", e.target.value)
                       }
-                      className="flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                       placeholder="Tên tập (tùy chọn)"
                     />
                     <Button
@@ -545,7 +591,6 @@ export default function DashboardNewMoviePage() {
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
-
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">
@@ -564,8 +609,7 @@ export default function DashboardNewMoviePage() {
                     </div>
                     {ep.servers.length === 0 ? (
                       <p className="text-xs text-muted-foreground">
-                        Chưa thêm server. Bấm &quot;Thêm server&quot; và điền
-                        tên (VD: MixDrop) + link embed.
+                        Chưa thêm server.
                       </p>
                     ) : (
                       ep.servers.map((srv) => (
@@ -599,7 +643,7 @@ export default function DashboardNewMoviePage() {
                               )
                             }
                             className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="https://... (link embed iframe)"
+                            placeholder="https://..."
                           />
                           <Button
                             type="button"
@@ -621,12 +665,20 @@ export default function DashboardNewMoviePage() {
           )}
         </section>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Đang thêm..." : "Thêm phim"}
+            {submitting ? "Đang cập nhật..." : "Cập nhật"}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link href="/dashboard/movies">Hủy</Link>
+            <Link href="/dashboard/admin/movies">Hủy</Link>
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={deleting}
+            onClick={handleDelete}
+          >
+            {deleting ? "Đang xóa..." : "Xóa phim"}
           </Button>
         </div>
       </form>

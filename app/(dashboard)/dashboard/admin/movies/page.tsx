@@ -23,7 +23,7 @@ export default async function DashboardMoviesPage() {
         </div>
         <Button asChild>
           <Link
-            href="/dashboard/movies/new"
+            href="/dashboard/admin/movies/new"
             className="inline-flex items-center gap-2"
           >
             <PlusCircle className="size-4" />
@@ -97,7 +97,7 @@ export default async function DashboardMoviesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Link
-                          href={`/dashboard/movies/${movie.slug}/edit`}
+                          href={`/dashboard/admin/movies/${movie.slug}/edit`}
                           className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
                         >
                           <Pencil className="size-4" />
