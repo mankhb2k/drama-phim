@@ -43,8 +43,8 @@ export function MovieCard({
       <div
         className={cn(
           "relative overflow-hidden rounded-xl bg-muted",
-          variant === "default" && "aspect-[2/3]",
-          variant === "compact" && "aspect-[2/3]"
+          variant === "default" && "aspect-[3/4]",
+          variant === "compact" && "aspect-[3/4]"
         )}
       >
         {posterUrl ? (

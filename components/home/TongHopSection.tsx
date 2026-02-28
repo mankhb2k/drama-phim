@@ -9,6 +9,7 @@ const PAGE_SIZE = 12;
 type MovieItem = {
   slug: string;
   title: string;
+  poster: string | null;
   year: number | null;
   status: "ONGOING" | "COMPLETED";
   episodes: number;
@@ -37,7 +38,7 @@ export function TongHopSection() {
 
   const fetchPage = useCallback(async (offset: number, append: boolean) => {
     const res = await fetch(
-      `/api/movies?limit=${PAGE_SIZE}&offset=${offset}&orderBy=createdAt`,
+      `/api/movies?limit=${PAGE_SIZE}&offset=${offset}&orderBy=updatedAt`,
     );
     if (!res.ok) return;
     const data: ApiResponse = await res.json();
@@ -51,7 +52,7 @@ export function TongHopSection() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPage(0, false).finally(() => setLoading(false));
   }, [fetchPage]);
 
@@ -80,6 +81,7 @@ export function TongHopSection() {
                   key={movie.slug}
                   slug={movie.slug}
                   title={movie.title}
+                  poster={movie.poster}
                   year={movie.year}
                   episodes={movie.episodes}
                   status={movie.status}

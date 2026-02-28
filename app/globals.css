@@ -138,3 +138,15 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Video.js: keep video centered, fill available player frame */
+.vjs-drama-player .video-js .vjs-tech {
+  object-fit: contain;
+  object-position: center;
+}
+
+.vjs-drama-player .video-js .vjs-big-play-button {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

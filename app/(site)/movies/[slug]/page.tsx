@@ -2,11 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Play, Calendar, Film } from "lucide-react";
-import { getMockMovieBySlug } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
 import { buildWatchHref } from "@/lib/watch-slug";
 import { cn } from "@/lib/utils";
 import { FavoriteButton } from "@/components/movie/FavoriteButton";
-import type { MockEpisode } from "@/lib/mock-data";
 
 const placeholderPoster =
   "linear-gradient(135deg, oklch(0.45 0.02 264) 0%, oklch(0.25 0.03 280) 100%)";
@@ -20,7 +19,15 @@ export default async function MovieDetailPage({
 }: MovieDetailPageProps) {
   const { slug } = await params;
 
-  const movie = getMockMovieBySlug(slug);
+  const movie = await prisma.movie.findUnique({
+    where: { slug },
+    include: {
+      episodes: {
+        orderBy: { episodeNumber: "asc" },
+        select: { id: true, episodeNumber: true },
+      },
+    },
+  });
   if (!movie) notFound();
 
   const firstEpisode = movie.episodes[0];
@@ -40,6 +47,7 @@ export default async function MovieDetailPage({
               sizes="280px"
               className="object-cover"
               priority
+              unoptimized
             />
           ) : (
             <div
@@ -108,7 +116,7 @@ export default async function MovieDetailPage({
             Danh sách tập
           </h2>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 sm:gap-3 md:grid-cols-8 lg:grid-cols-10">
-            {movie.episodes.map((ep: MockEpisode) => (
+            {movie.episodes.map((ep: { id: number; episodeNumber: number }) => (
               <Link
                 key={ep.id}
                 href={buildWatchHref(movie.slug, ep.episodeNumber)}

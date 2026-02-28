@@ -1,7 +1,11 @@
 import { PrismaClient, Role } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaNeon({
+  connectionString: process.env.DATABASE_URL as string,
+});
+const prisma = new PrismaClient({ adapter });
 
 // Cast để tương thích khi Prisma client chưa generate lại từ schema (có Genre, User.username)
 type PrismaSeed = PrismaClient & {

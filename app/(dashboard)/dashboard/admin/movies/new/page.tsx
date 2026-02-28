@@ -599,7 +599,7 @@ export default function DashboardNewMoviePage() {
                               )
                             }
                             className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="https://... (link embed iframe)"
+                            placeholder="https://cdn.com/video.mp4?sub=https%3A%2F%2Fcdn.com%2Fsub.vtt&vast=https%3A%2F%2Fadtag..."
                           />
                           <Button
                             type="button"
