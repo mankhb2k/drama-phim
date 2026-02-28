@@ -36,7 +36,7 @@ export function MovieCard({
         "group block shrink-0 transition-transform active:scale-[0.98]",
         variant === "default" && "w-[140px] sm:w-[160px]",
         variant === "compact" && "w-[120px] sm:w-[140px]",
-        className
+        className,
       )}
     >
       {/* Poster */}
@@ -44,7 +44,7 @@ export function MovieCard({
         className={cn(
           "relative overflow-hidden rounded-xl bg-muted",
           variant === "default" && "aspect-[3/4]",
-          variant === "compact" && "aspect-[3/4]"
+          variant === "compact" && "aspect-[3/4]",
         )}
       >
         {posterUrl ? (

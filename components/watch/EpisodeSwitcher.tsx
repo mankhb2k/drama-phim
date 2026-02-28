@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, List } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildWatchHref } from "@/lib/watch-slug";
 
@@ -21,8 +20,6 @@ export function EpisodeSwitcher({
   episodes,
   className,
 }: EpisodeSwitcherProps) {
-  const [listOpen, setListOpen] = useState(false);
-
   const currentIndex = episodes.findIndex(
     (ep) => ep.episodeNumber === currentEpisodeNumber
   );
@@ -42,7 +39,7 @@ export function EpisodeSwitcher({
               className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
               <ChevronLeft className="size-4" />
-              Tập {prevEp.episodeNumber}
+              Tập trước
             </Link>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
@@ -56,16 +53,6 @@ export function EpisodeSwitcher({
           <span className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
             Tập {currentEpisodeNumber}
           </span>
-          <button
-            type="button"
-            onClick={() => setListOpen((o) => !o)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            aria-expanded={listOpen}
-            aria-label={listOpen ? "Đóng danh sách tập" : "Mở danh sách tập"}
-          >
-            <List className="size-4" />
-            Danh sách
-          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -74,7 +61,7 @@ export function EpisodeSwitcher({
               href={buildWatchHref(movieSlug, nextEp.episodeNumber)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
-              Tập {nextEp.episodeNumber}
+              Tập tiếp
               <ChevronRight className="size-4" />
             </Link>
           ) : (
@@ -86,33 +73,30 @@ export function EpisodeSwitcher({
         </div>
       </div>
 
-      {listOpen && (
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-          <p className="mb-3 text-sm font-medium text-muted-foreground">
-            {movieTitle} — Chọn tập
-          </p>
-          <div className="grid max-h-[280px] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
-            {episodes.map((ep) => {
-              const isActive = ep.episodeNumber === currentEpisodeNumber;
-              return (
-                <Link
-                  key={ep.episodeNumber}
-                  href={buildWatchHref(movieSlug, ep.episodeNumber)}
-                  onClick={() => setListOpen(false)}
-                  className={cn(
-                    "rounded-lg border px-3 py-2.5 text-center text-sm font-medium transition-colors",
-                    isActive
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:bg-accent"
-                  )}
-                >
-                  {ep.episodeNumber}
-                </Link>
-              );
-            })}
-          </div>
+      <div className="rounded-xl border border-border bg-muted/30 p-4">
+        <p className="mb-3 text-sm font-medium text-muted-foreground">
+          {movieTitle} — Chọn tập
+        </p>
+        <div className="grid max-h-[280px] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+          {episodes.map((ep) => {
+            const isActive = ep.episodeNumber === currentEpisodeNumber;
+            return (
+              <Link
+                key={ep.episodeNumber}
+                href={buildWatchHref(movieSlug, ep.episodeNumber)}
+                className={cn(
+                  "rounded-lg border px-3 py-2.5 text-center text-sm font-medium transition-colors",
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-foreground hover:bg-accent"
+                )}
+              >
+                {ep.episodeNumber}
+              </Link>
+            );
+          })}
         </div>
-      )}
+      </div>
     </div>
   );
 }
