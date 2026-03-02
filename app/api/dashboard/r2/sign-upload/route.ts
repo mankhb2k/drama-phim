@@ -1,0 +1,89 @@
+import { NextRequest, NextResponse } from "next/server";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { z } from "zod";
+import { getSession } from "@/lib/auth";
+import {
+  buildR2PublicUrl,
+  buildR2VideoKey,
+  getR2Client,
+  getR2Config,
+} from "@/lib/r2";
+
+const signUploadSchema = z.object({
+  filename: z.string().min(1),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().positive(),
+  channel: z.string().min(1).default("nsh"),
+  movieSlug: z.string().min(1),
+  episodeSlug: z.string().min(1),
+});
+
+export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session || (session.role !== "ADMIN" && session.role !== "EDITOR")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const parsed = signUploadSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dữ liệu không hợp lệ", details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const data = parsed.data;
+    if (!data.mimeType.startsWith("video/")) {
+      return NextResponse.json(
+        { error: "Chỉ cho phép upload file video" },
+        { status: 400 },
+      );
+    }
+
+    const r2Config = getR2Config();
+    const maxSizeBytes = r2Config.maxVideoSizeMb * 1024 * 1024;
+    if (data.sizeBytes > maxSizeBytes) {
+      return NextResponse.json(
+        {
+          error: `File vượt quá giới hạn ${r2Config.maxVideoSizeMb}MB`,
+        },
+        { status: 400 },
+      );
+    }
+
+    const objectKey = buildR2VideoKey({
+      channel: data.channel,
+      movieSlug: data.movieSlug,
+      episodeSlug: data.episodeSlug,
+      filename: data.filename,
+    });
+    const publicPlaybackUrl = buildR2PublicUrl(objectKey);
+
+    const command = new PutObjectCommand({
+      Bucket: r2Config.bucket,
+      Key: objectKey,
+      ContentType: data.mimeType,
+    });
+
+    const uploadUrl = await getSignedUrl(getR2Client(), command, {
+      expiresIn: 60 * 10,
+    });
+
+    return NextResponse.json({
+      uploadUrl,
+      objectKey,
+      publicPlaybackUrl,
+      expiresInSeconds: 60 * 10,
+      maxSizeBytes,
+    });
+  } catch (error) {
+    console.error("[POST /api/dashboard/r2/sign-upload]", error);
+    return NextResponse.json(
+      { error: "Lỗi khi tạo URL upload" },
+      { status: 500 },
+    );
+  }
+}

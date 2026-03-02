@@ -9,7 +9,8 @@ export interface EpisodeSwitcherProps {
   movieSlug: string;
   movieTitle: string;
   currentEpisodeNumber: number;
-  episodes: Array<{ episodeNumber: number; name: string }>;
+  channel?: string;
+  episodes: Array<{ episodeNumber: number; name: string; episodeSlug?: string }>;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function EpisodeSwitcher({
   movieSlug,
   movieTitle,
   currentEpisodeNumber,
+  channel = "nsh",
   episodes,
   className,
 }: EpisodeSwitcherProps) {
@@ -35,7 +37,12 @@ export function EpisodeSwitcher({
         <div className="flex items-center gap-2">
           {prevEp ? (
             <Link
-              href={buildWatchHref(movieSlug, prevEp.episodeNumber)}
+              href={buildWatchHref(
+                movieSlug,
+                prevEp.episodeNumber,
+                channel,
+                prevEp.episodeSlug,
+              )}
               className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
               <ChevronLeft className="size-4" />
@@ -58,7 +65,12 @@ export function EpisodeSwitcher({
         <div className="flex items-center gap-2">
           {nextEp ? (
             <Link
-              href={buildWatchHref(movieSlug, nextEp.episodeNumber)}
+              href={buildWatchHref(
+                movieSlug,
+                nextEp.episodeNumber,
+                channel,
+                nextEp.episodeSlug,
+              )}
               className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
               Tập tiếp
@@ -83,7 +95,12 @@ export function EpisodeSwitcher({
             return (
               <Link
                 key={ep.episodeNumber}
-                href={buildWatchHref(movieSlug, ep.episodeNumber)}
+                href={buildWatchHref(
+                  movieSlug,
+                  ep.episodeNumber,
+                  channel,
+                  ep.episodeSlug,
+                )}
                 className={cn(
                   "rounded-lg border px-3 py-2.5 text-center text-sm font-medium transition-colors",
                   isActive

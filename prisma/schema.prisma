@@ -17,6 +17,16 @@ enum MovieStatus {
   COMPLETED
 }
 
+enum StorageProvider {
+  EXTERNAL
+  R2
+}
+
+enum ServerSourceType {
+  EMBED
+  DIRECT_VIDEO
+}
+
 model User {
   id            String    @id @default(uuid())
   username      String    @unique // Đăng nhập bằng username hoặc email (bắt buộc)
@@ -65,6 +75,7 @@ model Favorite {
 model Movie {
   id            Int     @id @default(autoincrement())
   slug          String  @unique
+  channel       String  @default("nsh")
   title         String
   originalTitle String?
   description   String?
@@ -94,6 +105,7 @@ model Episode {
   name          String 
   episodeNumber Int
   slug          String?
+  watchSlug     String?
 
   createdAt DateTime @default(now())
 
@@ -101,6 +113,7 @@ model Episode {
   servers Server[]
 
   @@unique([movieId, episodeNumber])
+  @@unique([movieId, watchSlug])
   @@index([movieId])
 }
 
@@ -108,10 +121,19 @@ model Server {
   id        Int @id @default(autoincrement())
   episodeId Int
 
-  name     String // VD: MixDrop, StreamTape, Okru
-  embedUrl String // iframe src
-  priority Int     @default(0) // server chính load trước
-  isActive Boolean @default(true)
+  name            String // VD: MixDrop, StreamTape, Okru
+  embedUrl        String // Legacy URL, giữ để tương thích cũ
+  sourceType      ServerSourceType @default(EMBED)
+  storageProvider StorageProvider  @default(EXTERNAL)
+  objectKey       String?
+  playbackUrl     String?
+  subtitleUrl     String?
+  vastTagUrl      String?
+  mimeType        String?
+  fileSizeBytes   Int?
+  durationSeconds Int?
+  priority        Int              @default(0) // server chính load trước
+  isActive        Boolean          @default(true)
 
   createdAt DateTime @default(now())
 

@@ -1,13 +1,17 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { parseWatchSlug } from "@/lib/watch-slug";
+import {
+  buildWatchHrefTree,
+  parseEpisodeSlug,
+  parseLegacyWatchSlug,
+} from "@/lib/watch-slug";
 import { EpisodeSwitcher } from "@/components/watch/EpisodeSwitcher";
 import { VideoJsPlayer } from "@/components/watch/VideoJsPlayer";
 import { ArrowLeft } from "lucide-react";
 
-interface WatchPageProps {
-  params: Promise<{ slug: string }>;
+interface WatchCatchAllPageProps {
+  params: Promise<{ segments: string[] }>;
 }
 
 type ParsedVideoSource = {
@@ -57,16 +61,28 @@ function parseVideoSource(rawUrl: string): ParsedVideoSource {
   }
 }
 
-export default async function WatchPage({ params }: WatchPageProps) {
-  const { slug } = await params;
-
-  const parsed = parseWatchSlug(slug);
+async function handleLegacySlug(slug: string) {
+  const parsed = parseLegacyWatchSlug(slug);
   if (!parsed) notFound();
 
   const { movieSlug, episodeNumber } = parsed;
-
-  const movie = await prisma.movie.findUnique({
+  const movie = await prisma.movie.findFirst({
     where: { slug: movieSlug },
+    select: { channel: true },
+  });
+  if (!movie) notFound();
+  const channel = movie.channel || "nsh";
+  const episodeSlug = `tap-${episodeNumber}`;
+  permanentRedirect(buildWatchHrefTree(channel, movieSlug, episodeSlug));
+}
+
+async function handleTreePath(parts: string[]) {
+  const [channel, movieSlug, episodeSlug] = parts;
+  const episodeNumber = parseEpisodeSlug(episodeSlug);
+  if (!episodeNumber) notFound();
+
+  const movie = await prisma.movie.findFirst({
+    where: { slug: movieSlug, channel },
     include: {
       episodes: {
         orderBy: { episodeNumber: "asc" },
@@ -78,6 +94,9 @@ export default async function WatchPage({ params }: WatchPageProps) {
               id: true,
               name: true,
               embedUrl: true,
+              playbackUrl: true,
+              subtitleUrl: true,
+              vastTagUrl: true,
             },
           },
         },
@@ -87,19 +106,22 @@ export default async function WatchPage({ params }: WatchPageProps) {
   if (!movie) notFound();
 
   const currentEpisode = movie.episodes.find(
-    (ep: (typeof movie.episodes)[number]) => ep.episodeNumber === episodeNumber
+    (ep: (typeof movie.episodes)[number]) =>
+      ep.episodeNumber === episodeNumber || ep.watchSlug === episodeSlug,
   );
   if (!currentEpisode) notFound();
 
   const primaryServer = currentEpisode.servers[0];
   const otherServers = currentEpisode.servers.filter(
-    (s: (typeof currentEpisode.servers)[number]) => s.id !== primaryServer?.id
+    (s: (typeof currentEpisode.servers)[number]) => s.id !== primaryServer?.id,
   );
-  const parsedPrimarySource = primaryServer?.embedUrl
-    ? parseVideoSource(primaryServer.embedUrl)
+  const primarySourceUrl =
+    primaryServer?.playbackUrl ?? primaryServer?.embedUrl ?? null;
+  const parsedPrimarySource = primarySourceUrl
+    ? parseVideoSource(primarySourceUrl)
     : null;
   const canUseVideoJs = Boolean(
-    parsedPrimarySource && isMp4Source(parsedPrimarySource.src)
+    parsedPrimarySource && isMp4Source(parsedPrimarySource.src),
   );
 
   return (
@@ -123,14 +145,16 @@ export default async function WatchPage({ params }: WatchPageProps) {
         {canUseVideoJs && parsedPrimarySource ? (
           <VideoJsPlayer
             src={parsedPrimarySource.src}
-            subtitleSrc={parsedPrimarySource.subtitleSrc}
+            subtitleSrc={
+              primaryServer?.subtitleUrl ?? parsedPrimarySource.subtitleSrc
+            }
             subtitleLabel={parsedPrimarySource.subtitleLabel}
             subtitleLang={parsedPrimarySource.subtitleLang}
-            vastTagUrl={parsedPrimarySource.vastTagUrl}
+            vastTagUrl={primaryServer?.vastTagUrl ?? parsedPrimarySource.vastTagUrl}
           />
-        ) : primaryServer?.embedUrl ? (
+        ) : primarySourceUrl ? (
           <iframe
-            src={primaryServer.embedUrl}
+            src={primarySourceUrl}
             title={`${movie.title} - Tập ${currentEpisode.episodeNumber}`}
             className="absolute inset-0 size-full"
             allowFullScreen
@@ -147,9 +171,11 @@ export default async function WatchPage({ params }: WatchPageProps) {
         movieSlug={movie.slug}
         movieTitle={movie.title}
         currentEpisodeNumber={currentEpisode.episodeNumber}
+        channel={movie.channel}
         episodes={movie.episodes.map((ep: (typeof movie.episodes)[number]) => ({
           episodeNumber: ep.episodeNumber,
           name: ep.name,
+          episodeSlug: ep.watchSlug ?? `tap-${ep.episodeNumber}`,
         }))}
       />
 
@@ -162,7 +188,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
             {otherServers.map((server: (typeof otherServers)[number]) => (
               <li key={server.id}>
                 <a
-                  href={server.embedUrl}
+                  href={server.playbackUrl ?? server.embedUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
@@ -176,4 +202,22 @@ export default async function WatchPage({ params }: WatchPageProps) {
       )}
     </div>
   );
+}
+
+export default async function WatchCatchAllPage({
+  params,
+}: WatchCatchAllPageProps) {
+  const { segments } = await params;
+  if (!Array.isArray(segments) || segments.length === 0) notFound();
+
+  if (segments.length === 1) {
+    await handleLegacySlug(segments[0]);
+    return null;
+  }
+
+  if (segments.length === 3) {
+    return handleTreePath(segments);
+  }
+
+  notFound();
 }

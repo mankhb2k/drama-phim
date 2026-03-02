@@ -8,6 +8,7 @@ import {
   FolderOpen,
   Tags,
   Users,
+  Database,
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/dashboard/admin/genres", label: "Thể loại", icon: FolderOpen },
   { href: "/dashboard/admin/tags", label: "Tag", icon: Tags },
   { href: "/dashboard/admin/users", label: "Quản lý user", icon: Users },
+  { href: "/dashboard/admin/r2", label: "Quản lý R2", icon: Database },
 ] as const;
 
 export function DashboardSidebar() {

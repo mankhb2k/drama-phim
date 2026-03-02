@@ -13,7 +13,16 @@ type ServerRow = {
   id: string;
   name: string;
   embedUrl: string;
+  playbackUrl: string;
+  objectKey: string;
+  sourceType: "EMBED" | "DIRECT_VIDEO";
+  storageProvider: "EXTERNAL" | "R2";
+  subtitleUrl: string;
+  vastTagUrl: string;
+  mimeType: string;
+  fileSizeBytes?: number;
   priority: number;
+  isActive: boolean;
 };
 type EpisodeRow = {
   id: string;
@@ -25,6 +34,7 @@ type EpisodeRow = {
 type MovieResponse = {
   id: number;
   slug: string;
+  channel: string;
   title: string;
   originalTitle: string | null;
   description: string | null;
@@ -42,7 +52,16 @@ type MovieResponse = {
       id: number;
       name: string;
       embedUrl: string;
+      playbackUrl: string | null;
+      objectKey: string | null;
+      sourceType: "EMBED" | "DIRECT_VIDEO";
+      storageProvider: "EXTERNAL" | "R2";
+      subtitleUrl: string | null;
+      vastTagUrl: string | null;
+      mimeType: string | null;
+      fileSizeBytes: number | null;
       priority: number;
+      isActive: boolean;
     }>;
   }>;
 };
@@ -68,6 +87,7 @@ export default function EditMoviePage() {
 
   const [title, setTitle] = useState("");
   const [slugInput, setSlugInput] = useState("");
+  const [channel, setChannel] = useState("nsh");
   const [originalTitle, setOriginalTitle] = useState("");
   const [description, setDescription] = useState("");
   const [poster, setPoster] = useState("");
@@ -77,6 +97,9 @@ export default function EditMoviePage() {
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
+  const [uploadingByServerId, setUploadingByServerId] = useState<
+    Record<string, boolean>
+  >({});
 
   const fetchMovieAndOptions = useCallback(async () => {
     if (!slug) return;
@@ -97,6 +120,7 @@ export default function EditMoviePage() {
 
       setTitle(movie.title);
       setSlugInput(movie.slug);
+      setChannel(movie.channel ?? "nsh");
       setOriginalTitle(movie.originalTitle ?? "");
       setDescription(movie.description ?? "");
       setPoster(movie.poster ?? "");
@@ -114,7 +138,16 @@ export default function EditMoviePage() {
             id: genId(),
             name: s.name,
             embedUrl: s.embedUrl,
+              playbackUrl: s.playbackUrl ?? "",
+              objectKey: s.objectKey ?? "",
+              sourceType: s.sourceType,
+              storageProvider: s.storageProvider,
+              subtitleUrl: s.subtitleUrl ?? "",
+              vastTagUrl: s.vastTagUrl ?? "",
+              mimeType: s.mimeType ?? "",
+              fileSizeBytes: s.fileSizeBytes ?? undefined,
             priority: s.priority,
+              isActive: s.isActive,
           })),
         }))
       );
@@ -172,7 +205,15 @@ export default function EditMoviePage() {
                   id: genId(),
                   name: "",
                   embedUrl: "",
+                  playbackUrl: "",
+                  objectKey: "",
+                  sourceType: "EMBED",
+                  storageProvider: "EXTERNAL",
+                  subtitleUrl: "",
+                  vastTagUrl: "",
+                  mimeType: "",
                   priority: e.servers.length,
+                  isActive: true,
                 },
               ],
             }
@@ -193,7 +234,7 @@ export default function EditMoviePage() {
     episodeId: string,
     serverId: string,
     field: keyof ServerRow,
-    value: string | number
+    value: ServerRow[keyof ServerRow]
   ) => {
     setEpisodes((prev) =>
       prev.map((e) =>
@@ -209,6 +250,85 @@ export default function EditMoviePage() {
     );
   };
 
+  const uploadVideoForServer = async (
+    episode: EpisodeRow,
+    server: ServerRow,
+    file: File,
+  ) => {
+    if (!slugInput.trim()) {
+      setMessage({
+        type: "error",
+        text: "Hãy điền slug phim trước khi upload video.",
+      });
+      return;
+    }
+
+    setUploadingByServerId((prev) => ({ ...prev, [server.id]: true }));
+    setMessage(null);
+    try {
+      const signRes = await fetch("/api/dashboard/r2/sign-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          mimeType: file.type || "video/mp4",
+          sizeBytes: file.size,
+          channel: channel.trim() || "nsh",
+          movieSlug: slugInput.trim(),
+          episodeSlug: `tap-${episode.episodeNumber}`,
+        }),
+      });
+      const signData = await signRes.json().catch(() => ({}));
+      if (!signRes.ok) {
+        setMessage({
+          type: "error",
+          text: signData.error ?? "Không tạo được URL upload R2.",
+        });
+        return;
+      }
+
+      const uploadRes = await fetch(signData.uploadUrl as string, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "video/mp4" },
+        body: file,
+      });
+      if (!uploadRes.ok) {
+        setMessage({ type: "error", text: "Upload video lên R2 thất bại." });
+        return;
+      }
+
+      updateServer(episode.id, server.id, "name", server.name || "R2");
+      updateServer(
+        episode.id,
+        server.id,
+        "embedUrl",
+        signData.publicPlaybackUrl as string,
+      );
+      updateServer(
+        episode.id,
+        server.id,
+        "playbackUrl",
+        signData.publicPlaybackUrl as string,
+      );
+      updateServer(
+        episode.id,
+        server.id,
+        "objectKey",
+        signData.objectKey as string,
+      );
+      updateServer(episode.id, server.id, "sourceType", "DIRECT_VIDEO");
+      updateServer(episode.id, server.id, "storageProvider", "R2");
+      updateServer(episode.id, server.id, "mimeType", file.type || "video/mp4");
+      updateServer(episode.id, server.id, "fileSizeBytes", file.size);
+      setMessage({
+        type: "success",
+        text: `Upload video thành công cho tập ${episode.episodeNumber}.`,
+      });
+    } finally {
+      setUploadingByServerId((prev) => ({ ...prev, [server.id]: false }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!slug) return;
@@ -218,6 +338,7 @@ export default function EditMoviePage() {
       const payload = {
         title: title.trim(),
         slug: slugInput.trim() || undefined,
+        channel: channel.trim() || "nsh",
         originalTitle: originalTitle.trim() || undefined,
         description: description.trim() || undefined,
         poster: poster.trim() || undefined,
@@ -230,11 +351,22 @@ export default function EditMoviePage() {
           episodeNumber: ep.episodeNumber,
           name: ep.name.trim() || undefined,
           servers: ep.servers
-            .filter((s) => s.name.trim() && s.embedUrl.trim())
+            .filter(
+              (s) => s.name.trim() && (s.playbackUrl.trim() || s.embedUrl.trim()),
+            )
             .map((s, i) => ({
               name: s.name.trim(),
               embedUrl: s.embedUrl.trim(),
+              playbackUrl: s.playbackUrl.trim() || undefined,
+              objectKey: s.objectKey.trim() || undefined,
+              sourceType: s.sourceType,
+              storageProvider: s.storageProvider,
+              subtitleUrl: s.subtitleUrl.trim() || undefined,
+              vastTagUrl: s.vastTagUrl.trim() || undefined,
+              mimeType: s.mimeType.trim() || undefined,
+              fileSizeBytes: s.fileSizeBytes ?? undefined,
               priority: i,
+              isActive: s.isActive,
             })),
         })),
       };
@@ -366,6 +498,22 @@ export default function EditMoviePage() {
                 onChange={(e) => setSlugInput(e.target.value)}
                 className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                 placeholder="VD: trum-quy-duong"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="channel"
+                className="text-sm font-medium text-foreground"
+              >
+                Channel URL
+              </label>
+              <input
+                id="channel"
+                type="text"
+                value={channel}
+                onChange={(e) => setChannel(e.target.value)}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="nsh"
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -645,6 +793,24 @@ export default function EditMoviePage() {
                             className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                             placeholder="https://cdn.com/video.mp4?sub=https%3A%2F%2Fcdn.com%2Fsub.vtt&vast=https%3A%2F%2Fadtag..."
                           />
+                          <label className="inline-flex cursor-pointer items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:bg-accent">
+                            Upload
+                            <input
+                              type="file"
+                              accept="video/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                void uploadVideoForServer(ep, srv, file);
+                              }}
+                            />
+                          </label>
+                          {uploadingByServerId[srv.id] && (
+                            <span className="text-xs text-muted-foreground">
+                              Uploading...
+                            </span>
+                          )}
                           <Button
                             type="button"
                             variant="ghost"

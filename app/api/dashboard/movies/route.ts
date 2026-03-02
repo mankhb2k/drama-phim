@@ -5,8 +5,27 @@ import { slugify } from "@/lib/slug";
 
 const serverSchema = z.object({
   name: z.string().min(1, "Tên server không được để trống"),
-  embedUrl: z.string().min(1, "Link embed không được để trống"),
+  embedUrl: z.string().optional(),
+  playbackUrl: z.string().optional(),
+  objectKey: z.string().optional(),
+  sourceType: z.enum(["EMBED", "DIRECT_VIDEO"]).default("EMBED"),
+  storageProvider: z.enum(["EXTERNAL", "R2"]).default("EXTERNAL"),
+  subtitleUrl: z.string().optional(),
+  vastTagUrl: z.string().optional(),
+  mimeType: z.string().optional(),
+  fileSizeBytes: z.coerce.number().int().positive().optional(),
+  durationSeconds: z.coerce.number().int().positive().optional(),
+  isActive: z.coerce.boolean().optional().default(true),
   priority: z.coerce.number().int().min(0).optional().default(0),
+}).superRefine((value, ctx) => {
+  const hasUrl = Boolean(value.embedUrl?.trim() || value.playbackUrl?.trim());
+  if (!hasUrl) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Cần ít nhất embedUrl hoặc playbackUrl",
+      path: ["embedUrl"],
+    });
+  }
 });
 
 const episodeSchema = z.object({
@@ -18,6 +37,7 @@ const episodeSchema = z.object({
 const createMovieSchema = z.object({
   title: z.string().min(1, "Tiêu đề không được để trống"),
   slug: z.string().min(1).optional(),
+  channel: z.string().min(1).default("nsh"),
   originalTitle: z.string().optional(),
   description: z.string().optional(),
   poster: z
@@ -74,6 +94,7 @@ export async function POST(request: NextRequest) {
     const movie = await prisma.movie.create({
       data: {
         slug,
+        channel: data.channel.trim(),
         title: data.title.trim(),
         originalTitle: data.originalTitle?.trim() || null,
         description: data.description?.trim() || null,
@@ -92,14 +113,25 @@ export async function POST(request: NextRequest) {
             ? {
                 create: data.episodes.map((ep) => ({
                   episodeNumber: ep.episodeNumber,
+                  watchSlug: `tap-${ep.episodeNumber}`,
                   name: ep.name?.trim() || `Tập ${ep.episodeNumber}`,
                   servers:
                     ep.servers.length > 0
                       ? {
                           create: ep.servers.map((s, i) => ({
+                            sourceType: s.sourceType,
+                            storageProvider: s.storageProvider,
                             name: s.name.trim(),
-                            embedUrl: s.embedUrl.trim(),
+                            embedUrl: (s.playbackUrl ?? s.embedUrl ?? "").trim(),
+                            playbackUrl: s.playbackUrl?.trim() || null,
+                            objectKey: s.objectKey?.trim() || null,
+                            subtitleUrl: s.subtitleUrl?.trim() || null,
+                            vastTagUrl: s.vastTagUrl?.trim() || null,
+                            mimeType: s.mimeType?.trim() || null,
+                            fileSizeBytes: s.fileSizeBytes ?? null,
+                            durationSeconds: s.durationSeconds ?? null,
                             priority: s.priority ?? i,
+                            isActive: s.isActive ?? true,
                           })),
                         }
                       : undefined,

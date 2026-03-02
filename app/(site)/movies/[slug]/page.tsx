@@ -33,7 +33,12 @@ export default async function MovieDetailPage({
 
   const firstEpisode = movie.episodes[0];
   const watchHref = firstEpisode
-    ? buildWatchHref(movie.slug, firstEpisode.episodeNumber)
+    ? buildWatchHref(
+        movie.slug,
+        firstEpisode.episodeNumber,
+        "nsh",
+        `tap-${firstEpisode.episodeNumber}`,
+      )
     : "#";
 
   return (
@@ -123,7 +128,12 @@ export default async function MovieDetailPage({
             {movie.episodes.map((ep: { id: number; episodeNumber: number }) => (
               <Link
                 key={ep.id}
-                href={buildWatchHref(movie.slug, ep.episodeNumber)}
+                href={buildWatchHref(
+                  movie.slug,
+                  ep.episodeNumber,
+                  "nsh",
+                  `tap-${ep.episodeNumber}`,
+                )}
                 className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 Tập {ep.episodeNumber}
