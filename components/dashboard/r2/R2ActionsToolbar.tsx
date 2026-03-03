@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Database, Plus, RefreshCcw, Search } from "lucide-react";
-import { useR2ManagerStore } from "@/lib/stores/r2-manager-store";
+import {
+  useR2ManagerStore,
+  type SortByName,
+} from "@/lib/stores/r2-manager-store";
 
 type DataSource = "r2" | "db";
 
@@ -26,6 +29,8 @@ export function R2ActionsToolbar({
   const [localSearch, setLocalSearch] = useState("");
   const search = useR2ManagerStore((state) => state.search);
   const setSearch = useR2ManagerStore((state) => state.setSearch);
+  const sortByName = useR2ManagerStore((state) => state.sortByName);
+  const setSortByName = useR2ManagerStore((state) => state.setSortByName);
 
   useEffect(() => {
     setLocalSearch(search);
@@ -69,6 +74,20 @@ export function R2ActionsToolbar({
             </button>
           </div>
         )}
+
+        <div className="flex items-center gap-1 rounded border border-border bg-muted/30 px-1 py-0.5 text-xs">
+          <span className="px-1.5 py-0.5 text-muted-foreground">Sắp xếp:</span>
+          {(["a-z", "default"] as const).map((value: SortByName) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSortByName(value)}
+              className={`rounded px-2 py-1 ${sortByName === value ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {value === "a-z" ? "A-Z" : "Mặc định"}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={onRefresh}
@@ -109,4 +128,3 @@ export function R2ActionsToolbar({
     </div>
   );
 }
-

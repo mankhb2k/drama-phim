@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowUpRightSquare, MoveRight, Trash2 } from "lucide-react";
 import { useR2ManagerStore, R2FileItem } from "@/lib/stores/r2-manager-store";
@@ -13,6 +14,17 @@ export function FileTable({ onMoveSelected, onDeleteSelected }: FileTableProps) 
   const files = useR2ManagerStore((state) => state.files);
   const selectedKeys = useR2ManagerStore((state) => state.selectedKeys);
   const toggleSelect = useR2ManagerStore((state) => state.toggleSelect);
+  const sortByName = useR2ManagerStore((state) => state.sortByName);
+
+  const displayFiles = useMemo(() => {
+    const list = [...files];
+    if (sortByName === "a-z") {
+      list.sort((a: R2FileItem, b: R2FileItem) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      );
+    }
+    return list;
+  }, [files, sortByName]);
 
   const hasSelection = selectedKeys.length > 0;
 
@@ -24,7 +36,8 @@ export function FileTable({ onMoveSelected, onDeleteSelected }: FileTableProps) 
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <div className="text-sm text-muted-foreground">
-          {files.length} file • {selectedKeys.length} đang chọn
+          {displayFiles.length} file
+          {selectedKeys.length > 0 ? ` • ${selectedKeys.length} đang chọn` : ""}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -62,7 +75,7 @@ export function FileTable({ onMoveSelected, onDeleteSelected }: FileTableProps) 
             </tr>
           </thead>
           <tbody>
-            {files.map((file: R2FileItem) => {
+            {displayFiles.map((file: R2FileItem) => {
               const checked = selectedKeys.includes(file.key);
               const sizeMb = file.size / (1024 * 1024);
               return (
@@ -106,7 +119,7 @@ export function FileTable({ onMoveSelected, onDeleteSelected }: FileTableProps) 
                 </tr>
               );
             })}
-            {files.length === 0 && (
+            {displayFiles.length === 0 && (
               <tr>
                 <td
                   colSpan={5}

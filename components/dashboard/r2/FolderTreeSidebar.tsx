@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, FolderTree } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ export function FolderTreeSidebar({
 }: FolderTreeSidebarProps) {
   const currentPrefix = useR2ManagerStore((state) => state.currentPrefix);
   const folders = useR2ManagerStore((state) => state.folders);
+  const sortByName = useR2ManagerStore((state) => state.sortByName);
 
   const baseHref =
     bucketSlug !== ""
@@ -39,12 +41,22 @@ export function FolderTreeSidebar({
     ? null
     : currentPrefix.replace(/\/+$/, "").split("/").pop() ?? null;
 
-  /** Chỉ hiển thị folder con trực tiếp của prefix hiện tại (khi vào subtitle/ chỉ hiện con của subtitle, không hiện folder gốc bucket). */
-  const directChildFolders = folders.filter((folder: R2FolderItem) => {
-    if (!folder.prefix.startsWith(currentPrefix)) return false;
-    const after = folder.prefix.slice(currentPrefix.length).replace(/\/+$/, "");
-    return after !== "" && !after.includes("/");
-  });
+  /** Chỉ hiển thị folder con trực tiếp của prefix hiện tại; áp dụng sắp xếp A-Z. */
+  const directChildFolders = useMemo(() => {
+    let list = folders.filter((folder: R2FolderItem) => {
+      if (!folder.prefix.startsWith(currentPrefix)) return false;
+      const after = folder.prefix.slice(currentPrefix.length).replace(/\/+$/, "");
+      return after !== "" && !after.includes("/");
+    });
+    if (sortByName === "a-z") {
+      list = list
+        .slice()
+        .sort((a: R2FolderItem, b: R2FolderItem) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+        );
+    }
+    return list;
+  }, [folders, currentPrefix, sortByName]);
 
   const parentHref = ((): string | null => {
     if (!baseHref || isAtRoot) return null;

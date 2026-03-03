@@ -13,6 +13,9 @@ export type R2FileItem = {
   publicUrl: string;
 };
 
+/** Sắp xếp danh sách: mặc định (theo API) hoặc A-Z theo tên. */
+export type SortByName = "default" | "a-z";
+
 type R2ManagerState = {
   currentPrefix: string;
   search: string;
@@ -22,6 +25,8 @@ type R2ManagerState = {
   selectedKeys: string[];
   /** Bucket đang chọn (null = dùng bucket mặc định từ env). */
   currentBucket: string | null;
+  /** Sắp xếp theo tên A-Z khi bật. */
+  sortByName: SortByName;
 };
 
 type R2ManagerActions = {
@@ -32,6 +37,7 @@ type R2ManagerActions = {
   toggleSelect: (key: string) => void;
   clearSelection: () => void;
   setCurrentBucket: (bucket: string | null) => void;
+  setSortByName: (value: SortByName) => void;
 };
 
 export type R2ManagerStore = R2ManagerState & R2ManagerActions;
@@ -44,7 +50,9 @@ export const useR2ManagerStore = create<R2ManagerStore>((set) => ({
   isLoading: false,
   selectedKeys: [],
   currentBucket: null,
+  sortByName: "a-z",
   setCurrentBucket: (bucket: string | null) => set({ currentBucket: bucket }),
+  setSortByName: (value: SortByName) => set({ sortByName: value }),
   setPrefix: (prefix: string) =>
     set({
       currentPrefix: prefix,
