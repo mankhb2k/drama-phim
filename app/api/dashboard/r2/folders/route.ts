@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CopyObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { getR2Client, getR2Config, normalizeSegment } from "@/lib/r2";
+import { prisma } from "@/lib/prisma";
+import { getR2Client, getR2Config, getR2ConfigWithBucket, normalizeSegment } from "@/lib/r2";
 
 const createFolderSchema = z.object({
   parentPrefix: z.string().default("videos/"),
   name: z.string().min(1),
+  bucket: z.string().min(1).optional(),
 });
 
 const renameFolderSchema = z.object({
   fromPrefix: z.string().min(1),
   toPrefix: z.string().min(1),
+  bucket: z.string().min(1).optional(),
 });
 
 const deleteFolderSchema = z.object({
   prefix: z.string().min(1),
+  bucket: z.string().min(1).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -33,11 +37,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const cfg = getR2Config();
+  const cfg = parsed.data.bucket
+    ? getR2ConfigWithBucket(parsed.data.bucket)
+    : getR2Config();
   const client = getR2Client();
 
   const parentPrefix = parsed.data.parentPrefix.replace(/^\/+/, "");
   const name = normalizeSegment(parsed.data.name);
+  if (!name || name.endsWith("-") || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+    return NextResponse.json(
+      { error: "Tên thư mục chỉ được dùng chữ thường, số và dấu gạch ngang (-), không kết thúc bằng -." },
+      { status: 400 },
+    );
+  }
   const folderPrefix = parentPrefix.endsWith("/")
     ? `${parentPrefix}${name}/`
     : `${parentPrefix}/${name}/`;
@@ -51,13 +63,23 @@ export async function POST(request: NextRequest) {
       }),
     );
   } catch {
-    await client.send(
-      new CopyObjectCommand({
-        Bucket: cfg.bucket,
-        CopySource: `${cfg.bucket}/`,
-        Key: `${folderPrefix}.keep`,
-      }),
-    );
+    try {
+      await client.send(
+        new CopyObjectCommand({
+          Bucket: cfg.bucket,
+          CopySource: `${cfg.bucket}/`,
+          Key: `${folderPrefix}.keep`,
+        }),
+      );
+    } catch {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: cfg.bucket,
+          Key: `${folderPrefix}.keep`,
+          Body: new Uint8Array(0),
+        }),
+      );
+    }
   }
 
   return NextResponse.json({
@@ -81,7 +103,9 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const cfg = getR2Config();
+  const cfg = parsed.data.bucket
+    ? getR2ConfigWithBucket(parsed.data.bucket)
+    : getR2Config();
   const client = getR2Client();
 
   const fromPrefix = parsed.data.fromPrefix.replace(/^\/+/, "");
@@ -150,10 +174,13 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const cfg = getR2Config();
+  const cfg = parsed.data.bucket
+    ? getR2ConfigWithBucket(parsed.data.bucket)
+    : getR2Config();
   const client = getR2Client();
 
-  const prefix = parsed.data.prefix.replace(/^\/+/, "");
+  const prefixRaw = parsed.data.prefix.replace(/^\/+/, "");
+  const prefix = prefixRaw.endsWith("/") ? prefixRaw : `${prefixRaw}/`;
 
   let continuationToken: string | undefined;
 
@@ -180,6 +207,16 @@ export async function DELETE(request: NextRequest) {
 
       continuationToken = listResp.NextContinuationToken;
     } while (continuationToken);
+
+    const deletedFolder = await prisma.r2Folder.findUnique({
+      where: { bucket_prefix: { bucket: cfg.bucket, prefix } },
+      select: { id: true },
+    });
+    if (deletedFolder) {
+      await prisma.r2Folder.delete({
+        where: { id: deletedFolder.id },
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

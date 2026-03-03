@@ -1,19 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, RefreshCcw, Search } from "lucide-react";
+import { Database, Plus, RefreshCcw, Search } from "lucide-react";
 import { useR2ManagerStore } from "@/lib/stores/r2-manager-store";
+
+type DataSource = "r2" | "db";
 
 interface R2ActionsToolbarProps {
   onCreateFolder: () => void;
   onRefresh: () => void;
   onOpenUploadGuide: () => void;
+  onSyncDb?: () => void;
+  dataSource?: DataSource;
+  onDataSourceChange?: (source: DataSource) => void;
 }
 
 export function R2ActionsToolbar({
   onCreateFolder,
   onRefresh,
   onOpenUploadGuide,
+  onSyncDb,
+  dataSource = "r2",
+  onDataSourceChange,
 }: R2ActionsToolbarProps) {
   const [localSearch, setLocalSearch] = useState("");
   const search = useR2ManagerStore((state) => state.search);
@@ -32,8 +40,8 @@ export function R2ActionsToolbar({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-3 py-2">
-      <div className="flex flex-1 items-center gap-2">
-        <div className="relative flex-1 min-w-[180px] max-w-md">
+      <div className="flex flex-1 flex-wrap items-center gap-2">
+        <div className="relative min-w-[180px] max-w-md flex-1">
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
           <input
             className="h-8 w-full rounded border border-border bg-background pl-7 pr-2 text-xs outline-none ring-0 placeholder:text-muted-foreground focus:border-primary"
@@ -42,6 +50,25 @@ export function R2ActionsToolbar({
             onChange={(event) => setLocalSearch(event.target.value)}
           />
         </div>
+        {onDataSourceChange && (
+          <div className="flex items-center gap-1 rounded border border-border bg-muted/30 px-1 py-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => onDataSourceChange("r2")}
+              className={`rounded px-2 py-1 ${dataSource === "r2" ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              R2
+            </button>
+            <button
+              type="button"
+              onClick={() => onDataSourceChange("db")}
+              className={`flex items-center gap-1 rounded px-2 py-1 ${dataSource === "db" ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Database className="size-3" />
+              DB
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={onRefresh}
@@ -52,6 +79,17 @@ export function R2ActionsToolbar({
         </button>
       </div>
       <div className="flex items-center gap-2">
+        {onSyncDb && (
+          <button
+            type="button"
+            onClick={onSyncDb}
+            className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent"
+            title="Đồng bộ danh sách file từ R2 vào DB (metadata để tìm kiếm)"
+          >
+            <Database className="size-3" />
+            Đồng bộ DB
+          </button>
+        )}
         <button
           type="button"
           onClick={onCreateFolder}

@@ -27,11 +27,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang="vi" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
         suppressHydrationWarning
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function() {
+  var key = 'drama-phim-theme';
+  var stored = typeof localStorage !== 'undefined' && localStorage.getItem(key);
+  var theme = 'dark';
+  try {
+    if (stored) {
+      var parsed = JSON.parse(stored);
+      if (parsed && parsed.state && parsed.state.theme) theme = parsed.state.theme;
+    }
+  } catch (e) {}
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+})();
+`,
+          }}
+        />
         <ThemeProvider>
           <AuthHydrate />
           {children}

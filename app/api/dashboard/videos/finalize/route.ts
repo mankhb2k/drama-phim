@@ -9,6 +9,12 @@ import {
   getR2Config,
   normalizeSegment,
 } from "@/lib/r2";
+import {
+  getOrCreateR2Folder,
+  getDisplayNameFromKey,
+  getPrefixFromKey,
+  upsertR2File,
+} from "@/lib/r2-db";
 
 const finalizeVideoSchema = z.object({
   movieSlug: z.string().min(1),
@@ -41,13 +47,15 @@ export async function POST(request: NextRequest) {
     const objectKey = data.objectKey.replace(/^\/+/, "");
 
     const r2Config = getR2Config();
+    let lastModifiedAt: Date | undefined;
     try {
-      await getR2Client().send(
+      const headRes = await getR2Client().send(
         new HeadObjectCommand({
           Bucket: r2Config.bucket,
           Key: objectKey,
         }),
       );
+      lastModifiedAt = headRes.LastModified;
     } catch {
       return NextResponse.json(
         { error: "File chưa tồn tại trên R2 hoặc key không hợp lệ" },
@@ -74,6 +82,20 @@ export async function POST(request: NextRequest) {
 
     const playbackUrl = data.playbackUrl ?? buildR2PublicUrl(objectKey);
     const priorityBase = await prisma.server.count({ where: { episodeId: episode.id } });
+
+    const prefix = getPrefixFromKey(objectKey);
+    const folderId = prefix
+      ? await getOrCreateR2Folder(prisma, r2Config.bucket, prefix)
+      : null;
+    await upsertR2File(prisma, {
+      bucket: r2Config.bucket,
+      key: objectKey,
+      folderId,
+      displayName: getDisplayNameFromKey(objectKey),
+      sizeBytes: data.fileSizeBytes ?? undefined,
+      mimeType: data.mimeType ?? undefined,
+      lastModifiedAt: lastModifiedAt ?? undefined,
+    });
 
     const server = await prisma.server.create({
       data: {

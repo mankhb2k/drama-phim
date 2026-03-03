@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { getR2Client, getR2Config } from "@/lib/r2";
+import { prisma } from "@/lib/prisma";
+import { getR2Client, getR2Config, getR2ConfigWithBucket } from "@/lib/r2";
+import {
+  getOrCreateR2Folder,
+  getDisplayNameFromKey,
+  getPrefixFromKey,
+  upsertR2File,
+} from "@/lib/r2-db";
 
 const moveSchema = z.object({
   fromKey: z.string().min(1),
   toPrefix: z.string().min(1),
+  bucket: z.string().min(1).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -24,7 +32,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const cfg = getR2Config();
+  const cfg = parsed.data.bucket
+    ? getR2ConfigWithBucket(parsed.data.bucket)
+    : getR2Config();
   const client = getR2Client();
 
   const fromKey = parsed.data.fromKey.replace(/^\/+/, "");
@@ -55,6 +65,28 @@ export async function POST(request: NextRequest) {
         Key: fromKey,
       }),
     );
+
+    const toPrefix = getPrefixFromKey(toKey);
+    const folderId = toPrefix
+      ? await getOrCreateR2Folder(prisma, cfg.bucket, toPrefix)
+      : null;
+    const existing = await prisma.r2File.findUnique({
+      where: { bucket_key: { bucket: cfg.bucket, key: fromKey } },
+    });
+    if (existing) {
+      await prisma.r2File.delete({
+        where: { bucket_key: { bucket: cfg.bucket, key: fromKey } },
+      });
+    }
+    await upsertR2File(prisma, {
+      bucket: cfg.bucket,
+      key: toKey,
+      folderId,
+      displayName: getDisplayNameFromKey(toKey),
+      sizeBytes: existing?.sizeBytes ?? undefined,
+      mimeType: existing?.mimeType ?? undefined,
+      lastModifiedAt: existing?.lastModifiedAt ?? undefined,
+    });
 
     return NextResponse.json({ success: true, key: toKey });
   } catch (error) {

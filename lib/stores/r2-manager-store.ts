@@ -20,6 +20,8 @@ type R2ManagerState = {
   files: R2FileItem[];
   isLoading: boolean;
   selectedKeys: string[];
+  /** Bucket đang chọn (null = dùng bucket mặc định từ env). */
+  currentBucket: string | null;
 };
 
 type R2ManagerActions = {
@@ -29,17 +31,20 @@ type R2ManagerActions = {
   setLoading: (value: boolean) => void;
   toggleSelect: (key: string) => void;
   clearSelection: () => void;
+  setCurrentBucket: (bucket: string | null) => void;
 };
 
 export type R2ManagerStore = R2ManagerState & R2ManagerActions;
 
 export const useR2ManagerStore = create<R2ManagerStore>((set) => ({
-  currentPrefix: "videos/",
+  currentPrefix: "",
   search: "",
   folders: [],
   files: [],
   isLoading: false,
   selectedKeys: [],
+  currentBucket: null,
+  setCurrentBucket: (bucket: string | null) => set({ currentBucket: bucket }),
   setPrefix: (prefix: string) =>
     set({
       currentPrefix: prefix,

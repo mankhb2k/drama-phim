@@ -163,3 +163,42 @@ model Tag {
 
   @@index([slug])
 }
+
+// --- R2 file/folder (metadata trong DB, folder chỉ để nhóm; file có thể ở root bucket) ---
+
+model R2Folder {
+  id        String    @id @default(uuid())
+  bucket    String
+  prefix    String // prefix đầy đủ, ví dụ videos/nsh/phim-a/
+  name      String // tên hiển thị (segment cuối của prefix)
+  parentId  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  parent   R2Folder?  @relation("R2FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children R2Folder[] @relation("R2FolderTree")
+  files    R2File[]
+
+  @@unique([bucket, prefix])
+  @@index([bucket])
+  @@index([parentId])
+}
+
+model R2File {
+  id            String    @id @default(uuid())
+  bucket        String
+  key           String // full object key trên R2
+  folderId      String? // null = file ở root bucket
+  displayName   String // tên file để tìm kiếm trong DB
+  sizeBytes     Int?
+  mimeType      String?
+  lastModifiedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  folder R2Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([bucket, key])
+  @@index([folderId])
+  @@index([bucket, displayName])
+}

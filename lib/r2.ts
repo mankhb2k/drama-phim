@@ -4,10 +4,12 @@ import { z } from "zod";
 
 const r2EnvSchema = z.object({
   R2_ENDPOINT: z.string().url(),
-  R2_BUCKET: z.string().min(1),
+  R2_BUCKET: z.string().min(1).optional(),
+  R2_BUCKET_NAME: z.string().min(1).optional(),
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
-  R2_PUBLIC_BASE_URL: z.string().url(),
+  R2_PUBLIC_BASE_URL: z.string().url().optional(),
+  R2_PUBLIC_URL: z.string().url().optional(),
   R2_MAX_VIDEO_SIZE_MB: z
     .string()
     .optional()
@@ -26,21 +28,37 @@ type R2Config = {
 let cachedConfig: R2Config | null = null;
 let cachedClient: S3Client | null = null;
 
-export function getR2Config(): R2Config {
+function getR2EnvConfig(): R2Config {
   if (cachedConfig) return cachedConfig;
   const parsed = r2EnvSchema.safeParse(process.env);
   if (!parsed.success) {
     throw new Error("Missing/invalid R2 env configuration");
   }
+  const bucket = parsed.data.R2_BUCKET ?? parsed.data.R2_BUCKET_NAME;
+  const publicBaseUrl = parsed.data.R2_PUBLIC_BASE_URL ?? parsed.data.R2_PUBLIC_URL;
+  if (!bucket || !publicBaseUrl) {
+    throw new Error("Cần R2_BUCKET (hoặc R2_BUCKET_NAME) và R2_PUBLIC_BASE_URL (hoặc R2_PUBLIC_URL)");
+  }
   cachedConfig = {
     endpoint: parsed.data.R2_ENDPOINT,
-    bucket: parsed.data.R2_BUCKET,
+    bucket,
     accessKeyId: parsed.data.R2_ACCESS_KEY_ID,
     secretAccessKey: parsed.data.R2_SECRET_ACCESS_KEY,
-    publicBaseUrl: parsed.data.R2_PUBLIC_BASE_URL.replace(/\/+$/, ""),
+    publicBaseUrl: publicBaseUrl.replace(/\/+$/, ""),
     maxVideoSizeMb: parsed.data.R2_MAX_VIDEO_SIZE_MB,
   };
   return cachedConfig;
+}
+
+/** Cấu hình R2 mặc định (bucket từ env). */
+export function getR2Config(): R2Config {
+  return getR2EnvConfig();
+}
+
+/** Cấu hình R2 với bucket cụ thể (cho dashboard đa bucket). */
+export function getR2ConfigWithBucket(bucketOverride: string): R2Config {
+  const base = getR2EnvConfig();
+  return { ...base, bucket: bucketOverride };
 }
 
 export function getR2Client(): S3Client {

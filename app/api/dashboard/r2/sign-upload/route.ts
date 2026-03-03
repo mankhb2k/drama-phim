@@ -8,6 +8,7 @@ import {
   buildR2VideoKey,
   getR2Client,
   getR2Config,
+  getR2ConfigWithBucket,
 } from "@/lib/r2";
 
 const signUploadSchema = z.object({
@@ -17,6 +18,7 @@ const signUploadSchema = z.object({
   channel: z.string().min(1).default("nsh"),
   movieSlug: z.string().min(1),
   episodeSlug: z.string().min(1),
+  bucket: z.string().min(1).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -43,7 +45,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const r2Config = getR2Config();
+    const r2Config = data.bucket
+      ? getR2ConfigWithBucket(data.bucket)
+      : getR2Config();
     const maxSizeBytes = r2Config.maxVideoSizeMb * 1024 * 1024;
     if (data.sizeBytes > maxSizeBytes) {
       return NextResponse.json(

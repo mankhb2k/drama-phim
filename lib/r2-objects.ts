@@ -3,12 +3,13 @@ import {
   _Object as S3Object,
 } from "@aws-sdk/client-s3";
 import { z } from "zod";
-import { getR2Client, getR2Config, buildR2PublicUrl } from "@/lib/r2";
+import { getR2Client, getR2Config, getR2ConfigWithBucket, buildR2PublicUrl } from "@/lib/r2";
 
 const listObjectsInputSchema = z.object({
   prefix: z.string().default("videos/"),
   search: z.string().optional(),
   continuationToken: z.string().optional(),
+  bucket: z.string().min(1).optional(),
 });
 
 export type ListObjectsInput = z.infer<typeof listObjectsInputSchema>;
@@ -55,7 +56,7 @@ function mapS3ObjectToFileItem(obj: S3Object, prefix: string): R2FileItem | null
 
 export async function listR2Objects(rawInput: ListObjectsInput): Promise<ListObjectsResult> {
   const input = listObjectsInputSchema.parse(rawInput);
-  const cfg = getR2Config();
+  const cfg = input.bucket ? getR2ConfigWithBucket(input.bucket) : getR2Config();
   const client = getR2Client();
 
   const prefix = input.prefix.startsWith("/") ? input.prefix.slice(1) : input.prefix;

@@ -7,6 +7,7 @@ const querySchema = z.object({
   prefix: z.string().optional(),
   search: z.string().optional(),
   continuationToken: z.string().optional(),
+  bucket: z.string().min(1).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
     prefix: searchParams.get("prefix") ?? undefined,
     search: searchParams.get("search") ?? undefined,
     continuationToken: searchParams.get("continuationToken") ?? undefined,
+    bucket: searchParams.get("bucket") ?? undefined,
   };
 
   const parsed = querySchema.safeParse(raw);
@@ -35,13 +37,16 @@ export async function GET(request: NextRequest) {
       prefix: parsed.data.prefix ?? "videos/",
       search: parsed.data.search ?? undefined,
       continuationToken: parsed.data.continuationToken ?? undefined,
+      bucket: parsed.data.bucket ?? undefined,
     });
 
     return NextResponse.json(result);
   } catch (error) {
     console.error("[GET /api/dashboard/r2/objects]", error);
+    const message =
+      error instanceof Error ? error.message : "Lỗi khi lấy danh sách object từ R2";
     return NextResponse.json(
-      { error: "Lỗi khi lấy danh sách object từ R2" },
+      { error: message },
       { status: 500 },
     );
   }
