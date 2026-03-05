@@ -12,8 +12,9 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import videojs from "video.js";
-import type Player from "video.js/dist/types/player";
+import Artplayer from "artplayer";
+
+type ArtplayerInstance = InstanceType<typeof Artplayer>;
 
 type VideoJsPlayerProps = {
   src: string;
@@ -23,53 +24,16 @@ type VideoJsPlayerProps = {
   vastTagUrl?: string | null;
 };
 
-declare global {
-  interface Window {
-    google?: {
-      ima?: unknown;
-    };
-  }
-}
-
-function loadImaSdk(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.google?.ima) return Promise.resolve();
-
-  const existing = document.querySelector(
-    'script[data-ima-sdk="true"]',
-  ) as HTMLScriptElement | null;
-
-  if (existing) {
-    return new Promise<void>((resolve, reject) => {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("Failed to load IMA SDK")),
-        { once: true },
-      );
-    });
-  }
-
-  return new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://imasdk.googleapis.com/js/sdkloader/ima3.js";
-    script.async = true;
-    script.dataset.imaSdk = "true";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load IMA SDK"));
-    document.head.appendChild(script);
-  });
-}
-
 export function VideoJsPlayer({
   src,
   subtitleSrc,
   subtitleLabel = "Vietnamese",
   subtitleLang = "vi",
-  vastTagUrl,
+  vastTagUrl: _vastTagUrl,
 }: VideoJsPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playerRef = useRef<Player | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<ArtplayerInstance | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -97,8 +61,8 @@ export function VideoJsPlayer({
 
   const scheduleHideControls = () => {
     clearHideControlsTimer();
-    const player = playerRef.current;
-    if (!player || player.isDisposed() || player.paused()) return;
+    const art = playerRef.current;
+    if (!art || art.isDestroy || !art.playing) return;
     hideControlsTimerRef.current = window.setTimeout(() => {
       setIsControlsVisible(false);
       setIsSettingsOpen(false);
@@ -111,84 +75,69 @@ export function VideoJsPlayer({
   };
 
   const seekBy = (seconds: number) => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    const current = player.currentTime() ?? 0;
-    const duration = player.duration() ?? 0;
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    const current = art.currentTime;
+    const dur = art.duration;
     const next = Math.min(
       Math.max(current + seconds, 0),
-      duration || Number.MAX_SAFE_INTEGER,
+      dur || Number.MAX_SAFE_INTEGER,
     );
-    player.currentTime(next);
+    art.currentTime = next;
   };
 
   const togglePlay = () => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    if (player.paused()) {
-      void player.play();
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    if (art.playing) {
+      art.pause();
     } else {
-      player.pause();
+      void art.play();
     }
   };
 
   const onSeek = (nextTime: number) => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    player.currentTime(nextTime);
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    art.currentTime = nextTime;
   };
 
   const onVolumeChange = (nextVolume: number) => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    player.volume(nextVolume);
-    if (nextVolume > 0 && player.muted()) {
-      player.muted(false);
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    art.volume = nextVolume;
+    if (nextVolume > 0 && art.muted) {
+      art.muted = false;
     }
   };
 
   const toggleMute = () => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    player.muted(!player.muted());
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    art.muted = !art.muted;
   };
 
   const toggleFullscreen = () => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    if (player.isFullscreen()) {
-      void player.exitFullscreen();
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    if (document.fullscreenElement === wrapper) {
+      void document.exitFullscreen();
     } else {
-      void player.requestFullscreen();
+      void wrapper.requestFullscreen();
     }
   };
 
   const setSubtitleMode = (enabled: boolean) => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    const textTracks = player.textTracks();
-    if (!textTracks) return;
-    const tracks = textTracks as unknown as ArrayLike<TextTrack>;
-
-    let foundSubtitleTrack = false;
-    for (let i = 0; i < textTracks.length; i += 1) {
-      const track = tracks[i];
-      if (!track) continue;
-      if (track.kind === "subtitles" || track.kind === "captions") {
-        foundSubtitleTrack = true;
-        track.mode = enabled ? "showing" : "disabled";
-      }
-    }
-
-    if (foundSubtitleTrack) {
-      setIsSubtitleEnabled(enabled);
-    }
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    art.subtitle.show = enabled;
+    setIsSubtitleEnabled(enabled);
   };
 
   const changePlaybackRate = (nextRate: number) => {
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-    player.playbackRate(nextRate);
+    const art = playerRef.current;
+    if (!art || art.isDestroy) return;
+    art.playbackRate = nextRate as ArtplayerInstance["playbackRate"];
     setPlaybackRate(nextRate);
   };
 
@@ -209,175 +158,128 @@ export function VideoJsPlayer({
 
   useEffect(() => {
     let disposed = false;
-    const videoElement = videoRef.current;
-    if (!videoElement || !videoElement.isConnected) return;
-    const mountedVideo = videoElement;
+    const containerEl = containerRef.current;
+    if (!containerEl || !containerEl.isConnected) return;
 
-    async function initPlayer() {
-      if (disposed || !mountedVideo.isConnected) return;
-      if (playerRef.current && !playerRef.current.isDisposed()) return;
+    function initPlayer() {
+      const el = containerRef.current;
+      if (disposed || !el?.isConnected) return;
+      if (playerRef.current && !playerRef.current.isDestroy) return;
 
-      // Không set crossOrigin: video tải trực tiếp từ R2. Sub: Next.js đọc qua GET /api/subtitle?url=..., client nhận .vtt rồi gắn vào video bằng blob URL.
-
-      const player = videojs(mountedVideo, {
-        controls: false,
-        bigPlayButton: false,
-        controlBar: false,
+      Artplayer.NOTICE_TIME = 0;
+      const art = new Artplayer({
+        container: el,
+        url: src,
         autoplay: false,
-        preload: "auto",
-        responsive: true,
-        fluid: false,
-        fill: true,
-        sources: [{ src, type: "video/mp4" }],
+        theme: "#f59e0b",
+        volume: 1,
+        muted: false,
+        setting: false,
+        fullscreen: false,
+        fullscreenWeb: false,
+        pip: false,
+        playbackRate: false,
+        hotkey: true,
+        moreVideoAttr: {
+          preload: "auto",
+        },
       });
 
-      playerRef.current = player;
-      setIsReady(true);
-      setIsControlsVisible(true);
-      setIsSettingsOpen(false);
+      playerRef.current = art;
 
       const syncState = () => {
-        setCurrentTime(player.currentTime() ?? 0);
-        setDuration(player.duration() ?? 0);
-        setVolume(player.volume() ?? 1);
-        setIsMuted(player.muted() ?? false);
-        setIsPlaying(!player.paused());
-        setIsFullscreen(player.isFullscreen() ?? false);
-        setPlaybackRate(player.playbackRate() ?? 1);
-
-        const textTracks = player.textTracks();
-        let subtitleShowing = false;
-        if (textTracks) {
-          const tracks = textTracks as unknown as ArrayLike<TextTrack>;
-          for (let i = 0; i < textTracks.length; i += 1) {
-            const track = tracks[i];
-            if (!track) continue;
-            if (
-              (track.kind === "subtitles" || track.kind === "captions") &&
-              track.mode === "showing"
-            ) {
-              subtitleShowing = true;
-            }
-          }
-        }
-        setIsSubtitleEnabled(subtitleShowing);
+        setCurrentTime(art.currentTime);
+        setDuration(art.duration);
+        setVolume(art.volume);
+        setIsMuted(art.muted);
+        setIsPlaying(art.playing);
+        setIsFullscreen(art.fullscreen);
+        setPlaybackRate(art.playbackRate as number);
+        setIsSubtitleEnabled(art.subtitle.show);
       };
-      syncState();
 
-      player.on("loadedmetadata", syncState);
-      player.on("durationchange", syncState);
-      player.on("timeupdate", syncState);
-      player.on("play", () => {
-        syncState();
-        scheduleHideControls();
-      });
-      player.on("pause", () => {
-        syncState();
-        clearHideControlsTimer();
+      art.on("ready", () => {
+        setIsReady(true);
         setIsControlsVisible(true);
-      });
-      player.on("ended", () => {
+        setIsSettingsOpen(false);
         syncState();
-        clearHideControlsTimer();
-        setIsControlsVisible(true);
-      });
-      player.on("volumechange", syncState);
-      player.on("fullscreenchange", syncState);
 
-      const rawSubSrc = subtitleSrc?.trim();
-      if (rawSubSrc) {
-        const videoEl =
-          (player.el()?.querySelector("video") as HTMLVideoElement | null) ??
-          mountedVideo;
+        const noticeEl = el.querySelector(".art-notice");
+        if (noticeEl instanceof HTMLElement) {
+          noticeEl.style.setProperty("display", "none", "important");
+          noticeEl.style.setProperty("visibility", "hidden", "important");
+        }
 
-        const enableSubTrack = (track: TextTrack) => {
-          if (track.kind === "subtitles" || track.kind === "captions") {
-            track.mode = "showing";
-            setSubtitleMode(true);
-          }
-        };
+        art.on("video:timeupdate", syncState);
+        art.on("video:durationchange", syncState);
+        art.on("video:volumechange", syncState);
+        art.on("video:play", () => {
+          syncState();
+          scheduleHideControls();
+          requestAnimationFrame(() => {
+            if (!art.isDestroy) art.notice.show = "";
+          });
+        });
+        art.on("video:pause", () => {
+          syncState();
+          clearHideControlsTimer();
+          setIsControlsVisible(true);
+          requestAnimationFrame(() => {
+            if (!art.isDestroy) art.notice.show = "";
+          });
+        });
+        art.on("video:ended", () => {
+          syncState();
+          clearHideControlsTimer();
+          setIsControlsVisible(true);
+        });
+        art.on("fullscreen", () => {
+          syncState();
+        });
 
-        const onAddTrack = (e: Event) => {
-          const t = (e as TrackEvent).track;
-          if (t) enableSubTrack(t);
-        };
-
-        const attachTrack = (trackSrc: string) => {
-          const trackEl = document.createElement("track");
-          trackEl.kind = "subtitles";
-          trackEl.src = trackSrc;
-          trackEl.srclang = subtitleLang;
-          trackEl.label = subtitleLabel;
-          trackEl.default = true;
-          videoEl.textTracks.addEventListener("addtrack", onAddTrack);
-          videoEl.appendChild(trackEl);
-          const tryEnable = () => {
-            const list = videoEl.textTracks;
-            for (let i = 0; i < list.length; i += 1) {
-              const t = list[i];
-              if (t && (t.kind === "subtitles" || t.kind === "captions")) {
-                enableSubTrack(t);
-                return;
-              }
+        const rawSubSrc = subtitleSrc?.trim();
+        if (rawSubSrc) {
+          const resolveSubSrc = async (): Promise<string> => {
+            const isExternal = /^https?:\/\//i.test(rawSubSrc);
+            if (isExternal) {
+              const res = await fetch(
+                `/api/subtitle?url=${encodeURIComponent(rawSubSrc)}`,
+              );
+              if (!res.ok) throw new Error(`Subtitle ${res.status}`);
+              const vttText = await res.text();
+              const blob = new Blob([vttText], { type: "text/vtt" });
+              const blobUrl = URL.createObjectURL(blob);
+              subtitleBlobUrlRef.current = blobUrl;
+              return blobUrl;
             }
+            return rawSubSrc;
           };
-          player.one("loadedmetadata", tryEnable);
-          window.setTimeout(tryEnable, 100);
-          window.setTimeout(tryEnable, 500);
-        };
 
-        const isExternal = /^https?:\/\//i.test(rawSubSrc);
-        if (isExternal) {
-          try {
-            const res = await fetch(
-              `/api/subtitle?url=${encodeURIComponent(rawSubSrc)}`,
-            );
-            if (!res.ok) throw new Error(`Subtitle ${res.status}`);
-            const vttText = await res.text();
-            const blob = new Blob([vttText], { type: "text/vtt" });
-            const blobUrl = URL.createObjectURL(blob);
-            subtitleBlobUrlRef.current = blobUrl;
-            attachTrack(blobUrl);
-          } catch (err) {
-            console.error("[VideoJsPlayer] Load sub qua proxy failed", err);
-          }
-        } else {
-          attachTrack(rawSubSrc);
-        }
-      }
-
-      if (vastTagUrl) {
-        try {
-          await Promise.all([
-            import("videojs-contrib-ads"),
-            import("videojs-ima"),
-          ]);
-          await loadImaSdk();
-
-          if (
-            typeof (player as unknown as { ima?: unknown }).ima === "function"
-          ) {
-            (
-              player as unknown as {
-                ima: (options: { adTagUrl: string }) => void;
-              }
-            ).ima({
-              adTagUrl: vastTagUrl,
+          resolveSubSrc()
+            .then((trackSrc) => {
+              if (art.isDestroy) return;
+              art.subtitle.url = trackSrc;
+              art.subtitle.show = true;
+              art.subtitle.style({
+                color: "#fff",
+                textShadow: "none",
+                webkitTextStroke: "1px #000",
+              });
+              setIsSubtitleEnabled(true);
+            })
+            .catch((err) => {
+              console.error("[VideoJsPlayer] Load sub qua proxy failed", err);
             });
-          }
-        } catch (error) {
-          console.error("[VideoJsPlayer] VAST init failed", error);
         }
-      }
+      });
+
+      // VAST/IMA: defer to phase 2 or use artplayer-plugin-ads when needed
     }
 
-    const rafId = window.requestAnimationFrame(() => {
-      void initPlayer();
-    });
+    initPlayer();
 
     return () => {
       disposed = true;
-      window.cancelAnimationFrame(rafId);
       clearHideControlsTimer();
       setIsReady(false);
       setIsSettingsOpen(false);
@@ -387,30 +289,39 @@ export function VideoJsPlayer({
         URL.revokeObjectURL(subtitleBlobUrlRef.current);
         subtitleBlobUrlRef.current = null;
       }
-      if (playerRef.current && !playerRef.current.isDisposed()) {
-        playerRef.current.dispose();
+      if (playerRef.current && !playerRef.current.isDestroy) {
+        playerRef.current.destroy(true);
       }
       playerRef.current = null;
     };
-  }, [src, subtitleLabel, subtitleLang, subtitleSrc, vastTagUrl]);
+  }, [src, subtitleLabel, subtitleLang, subtitleSrc]);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === wrapper);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
 
   return (
     <div
-      data-vjs-player
-      className="vjs-drama-player relative w-full"
+      ref={wrapperRef}
+      className="art-drama-player absolute inset-0 size-full"
       onMouseMove={revealControls}
       onTouchStart={revealControls}
       onClick={revealControls}
     >
-      {/* Core video element managed by Video.js */}
-      <video
-        ref={videoRef}
-        className="video-js vjs-big-play-centered size-full rounded-xl"
+      <div
+        ref={containerRef}
+        className="absolute inset-0 size-full rounded-xl [&_.art-video-player]:!rounded-xl"
       />
 
       {isReady && (
         <>
-          {/* Center overlay controls: seek/play/seek */}
           <div
             className={`absolute left-1/2 top-1/2 z-30 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 transition-opacity duration-200 ${
               isControlsVisible || !isPlaying
@@ -468,9 +379,8 @@ export function VideoJsPlayer({
 
       {isReady && (
         <>
-          {/* Bottom control bar: time, progress, audio, settings, fullscreen */}
           <div
-            className={`absolute inset-x-0 bottom-0 z-40 space-y-2 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-3 text-white transition-opacity duration-200 ${
+            className={`absolute inset-x-0 bottom-0 z-40 space-y-2 bg-gradient-to-t from-black/50 via-black/20 to-transparent p-3 text-white transition-opacity duration-200 ${
               isControlsVisible || !isPlaying
                 ? "opacity-100"
                 : "pointer-events-none opacity-0"
@@ -483,7 +393,6 @@ export function VideoJsPlayer({
             </div>
 
             <div className="space-y-2">
-              {/* Timeline/progress seek bar */}
               <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-600">
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-zinc-300"
@@ -503,7 +412,6 @@ export function VideoJsPlayer({
                 />
               </div>
 
-              {/* Utility controls row */}
               <div className="relative flex w-full items-center gap-2">
                 <button
                   type="button"
@@ -558,20 +466,16 @@ export function VideoJsPlayer({
                   )}
                 </button>
 
-                {/* Popup settings panel: quality, speed, subtitle */}
                 {isSettingsOpen && (
                   <div className="absolute bottom-10 right-4 z-40 min-w-52 space-y-3 rounded-lg border border-white/20 bg-black/85 p-3 text-xs shadow-xl backdrop-blur-md">
                     <div>
                       <p className="mb-2 text-white/70">Chất lượng</p>
-                      <button
-                        type="button"
-                        className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-white transition-colors hover:bg-white/10"
-                      >
-                        <span className="pr-2">Auto</span>
+                      <div className="flex items-center gap-2 rounded px-2 py-1.5 text-left text-white">
+                        <span>Auto</span>
                         <span className="rounded bg-red-600 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
                           HD
                         </span>
-                      </button>
+                      </div>
                     </div>
 
                     <div>

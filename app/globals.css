@@ -139,48 +139,53 @@
   display: none;
 }
 
-/* Video.js: keep video centered, fill available player frame */
-.vjs-drama-player .video-js .vjs-tech {
+/* ArtPlayer: video luôn căn giữa player */
+.art-drama-player video {
+  width: 100% !important;
+  height: 100% !important;
   object-fit: contain;
   object-position: center;
 }
 
-.vjs-drama-player .video-js .vjs-big-play-button {
-  width: 3.25rem;
-  height: 3.25rem;
-  border: 0;
-  border-radius: 9999px;
-  background-color: rgb(255 255 255 / 92%);
-  color: #111827;
-  box-shadow: 0 10px 25px rgb(0 0 0 / 35%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* Fullscreen: wrapper fills viewport, black background, keep controls visible */
+.art-drama-player:fullscreen,
+.art-drama-player:-webkit-full-screen {
+  background: #000;
+  width: 100%;
+  height: 100%;
 }
 
-.vjs-drama-player .video-js .vjs-big-play-button:hover {
-  background-color: #ffffff;
+/* ArtPlayer: hide default control bar (we use custom React overlay) */
+.art-drama-player .art-bottom {
+  display: none !important;
 }
 
-.vjs-drama-player .video-js .vjs-big-play-button .vjs-icon-placeholder::before {
-  content: "▶";
-  font-size: 1.2rem;
-  line-height: 1;
-  color: #111827;
+/* ArtPlayer: ẩn hoàn toàn chữ Play/Pause (notice) để tránh nhấp nháy */
+.art-drama-player .art-notice,
+.art-drama-player .art-notice *,
+.art-drama-player .art-state,
+.art-drama-player .art-info {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-.vjs-drama-player .video-js .vjs-control-bar {
-  background: linear-gradient(to top, rgb(0 0 0 / 82%), rgb(0 0 0 / 45%));
+/* Phụ đề ArtPlayer: bước 1 – đưa lên khung xanh (vị trí dọc) */
+.art-drama-player .art-subtitle {
+  position: absolute !important;
+  bottom: 33% !important;
 }
 
-.vjs-drama-player .video-js .vjs-slider {
-  background-color: rgb(255 255 255 / 28%);
-}
-
-.vjs-drama-player .video-js .vjs-play-progress {
-  background: linear-gradient(90deg, #f59e0b, #f97316);
-}
-
-.vjs-drama-player .video-js .vjs-volume-level {
-  background: linear-gradient(90deg, #f59e0b, #f97316);
+/* Phụ đề ArtPlayer: chữ trắng, viền đen, không nền */
+.art-drama-player .art-subtitle,
+.art-drama-player .art-subtitle * {
+  background: none !important;
+  color: #fff !important;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-text-stroke: 1px #000;
+  text-stroke: 1px #000;
+  paint-order: stroke fill;
+  -webkit-paint-order: stroke fill;
+  text-shadow: none;
 }
