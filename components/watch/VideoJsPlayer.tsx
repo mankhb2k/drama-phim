@@ -84,6 +84,7 @@ export function VideoJsPlayer({
     Boolean(subtitleSrc),
   );
   const hideControlsTimerRef = useRef<number | null>(null);
+  const subtitleBlobUrlRef = useRef<string | null>(null);
   const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
   const hasSubtitle = Boolean(subtitleSrc);
 
@@ -216,6 +217,8 @@ export function VideoJsPlayer({
       if (disposed || !mountedVideo.isConnected) return;
       if (playerRef.current && !playerRef.current.isDisposed()) return;
 
+      // Không set crossOrigin: video tải trực tiếp từ R2. Sub: Next.js đọc qua GET /api/subtitle?url=..., client nhận .vtt rồi gắn vào video bằng blob URL.
+
       const player = videojs(mountedVideo, {
         controls: false,
         bigPlayButton: false,
@@ -281,18 +284,66 @@ export function VideoJsPlayer({
       player.on("volumechange", syncState);
       player.on("fullscreenchange", syncState);
 
-      if (subtitleSrc) {
-        player.addRemoteTextTrack(
-          {
-            kind: "subtitles",
-            src: subtitleSrc,
-            srclang: subtitleLang,
-            label: subtitleLabel,
-            default: true,
-          },
-          false,
-        );
-        window.setTimeout(() => setSubtitleMode(true), 0);
+      const rawSubSrc = subtitleSrc?.trim();
+      if (rawSubSrc) {
+        const videoEl =
+          (player.el()?.querySelector("video") as HTMLVideoElement | null) ??
+          mountedVideo;
+
+        const enableSubTrack = (track: TextTrack) => {
+          if (track.kind === "subtitles" || track.kind === "captions") {
+            track.mode = "showing";
+            setSubtitleMode(true);
+          }
+        };
+
+        const onAddTrack = (e: Event) => {
+          const t = (e as TrackEvent).track;
+          if (t) enableSubTrack(t);
+        };
+
+        const attachTrack = (trackSrc: string) => {
+          const trackEl = document.createElement("track");
+          trackEl.kind = "subtitles";
+          trackEl.src = trackSrc;
+          trackEl.srclang = subtitleLang;
+          trackEl.label = subtitleLabel;
+          trackEl.default = true;
+          videoEl.textTracks.addEventListener("addtrack", onAddTrack);
+          videoEl.appendChild(trackEl);
+          const tryEnable = () => {
+            const list = videoEl.textTracks;
+            for (let i = 0; i < list.length; i += 1) {
+              const t = list[i];
+              if (t && (t.kind === "subtitles" || t.kind === "captions")) {
+                enableSubTrack(t);
+                return;
+              }
+            }
+          };
+          player.one("loadedmetadata", tryEnable);
+          window.setTimeout(tryEnable, 100);
+          window.setTimeout(tryEnable, 500);
+        };
+
+        const isExternal = /^https?:\/\//i.test(rawSubSrc);
+        if (isExternal) {
+          try {
+            const res = await fetch(
+              `/api/subtitle?url=${encodeURIComponent(rawSubSrc)}`,
+            );
+            if (!res.ok) throw new Error(`Subtitle ${res.status}`);
+            const vttText = await res.text();
+            const blob = new Blob([vttText], { type: "text/vtt" });
+            const blobUrl = URL.createObjectURL(blob);
+            subtitleBlobUrlRef.current = blobUrl;
+            attachTrack(blobUrl);
+          } catch (err) {
+            console.error("[VideoJsPlayer] Load sub qua proxy failed", err);
+          }
+        } else {
+          attachTrack(rawSubSrc);
+        }
       }
 
       if (vastTagUrl) {
@@ -332,6 +383,10 @@ export function VideoJsPlayer({
       setIsSettingsOpen(false);
       setPlaybackRate(1);
       setIsSubtitleEnabled(Boolean(subtitleSrc));
+      if (subtitleBlobUrlRef.current) {
+        URL.revokeObjectURL(subtitleBlobUrlRef.current);
+        subtitleBlobUrlRef.current = null;
+      }
       if (playerRef.current && !playerRef.current.isDisposed()) {
         playerRef.current.dispose();
       }
@@ -543,19 +598,26 @@ export function VideoJsPlayer({
 
                     <div>
                       <p className="mb-2 text-white/70">Phụ đề</p>
-                      <button
-                        type="button"
-                        onClick={() => setSubtitleMode(!isSubtitleEnabled)}
-                        disabled={!hasSubtitle}
-                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left transition-colors ${
-                          hasSubtitle
-                            ? "text-white hover:bg-white/10"
-                            : "cursor-not-allowed text-white/40"
+                      <div
+                        className={`flex items-center gap-2 rounded px-1 py-1 ${
+                          !hasSubtitle ? "cursor-not-allowed opacity-60" : ""
                         }`}
                       >
-                        <span className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => hasSubtitle && setSubtitleMode(true)}
+                          disabled={!hasSubtitle}
+                          className={`inline-flex items-center gap-0.5 rounded px-2 py-1.5 text-[10px] font-semibold transition-colors ${
+                            hasSubtitle
+                              ? isSubtitleEnabled
+                                ? "bg-white/20 text-white"
+                                : "text-white/60 hover:bg-white/10 hover:text-white/80"
+                              : "cursor-not-allowed text-white/40"
+                          }`}
+                          aria-label="Bật phụ đề"
+                        >
                           <span
-                            className={`relative inline-flex size-4 items-center justify-center rounded-full border transition-colors ${
+                            className={`relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
                               !hasSubtitle
                                 ? "border-white/25"
                                 : isSubtitleEnabled
@@ -573,15 +635,64 @@ export function VideoJsPlayer({
                               }`}
                             />
                           </span>
-                          <span className="text-[10px] font-semibold leading-none text-white/80">
-                            {hasSubtitle
-                              ? isSubtitleEnabled
-                                ? "Bật"
-                                : "Tắt"
-                              : "Unavailable"}
+                          <span
+                            className={`px-1 ${
+                              hasSubtitle && isSubtitleEnabled
+                                ? "text-white"
+                                : "text-white/70"
+                            }`}
+                          >
+                            Bật
                           </span>
-                        </span>
-                      </button>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => hasSubtitle && setSubtitleMode(false)}
+                          disabled={!hasSubtitle}
+                          className={`inline-flex items-center gap-0.5 rounded px-2 py-1.5 text-[10px] font-semibold transition-colors ${
+                            hasSubtitle
+                              ? !isSubtitleEnabled
+                                ? "bg-white/20 text-white"
+                                : "text-white/60 hover:bg-white/10 hover:text-white/80"
+                              : "cursor-not-allowed text-white/40"
+                          }`}
+                          aria-label="Tắt phụ đề"
+                        >
+                          <span
+                            className={`relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                              !hasSubtitle
+                                ? "border-white/25"
+                                : !isSubtitleEnabled
+                                  ? "border-emerald-400"
+                                  : "border-white/60"
+                            }`}
+                          >
+                            <span
+                              className={`size-1.5 rounded-full transition-colors ${
+                                !hasSubtitle
+                                  ? "bg-white/25"
+                                  : !isSubtitleEnabled
+                                    ? "bg-emerald-400"
+                                    : "bg-white/70"
+                              }`}
+                            />
+                          </span>
+                          <span
+                            className={`px-1 ${
+                              hasSubtitle && !isSubtitleEnabled
+                                ? "text-white"
+                                : "text-white/70"
+                            }`}
+                          >
+                            Tắt
+                          </span>
+                        </button>
+                      </div>
+                      {!hasSubtitle && (
+                        <p className="mt-1 text-[10px] text-white/50">
+                          Không có phụ đề
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

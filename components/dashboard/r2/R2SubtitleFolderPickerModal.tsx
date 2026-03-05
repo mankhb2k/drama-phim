@@ -73,33 +73,30 @@ export function R2SubtitleFolderPickerModal({
     }
   }, [bucket]);
 
-  const fetchObjects = useCallback(
-    async (b: string, p: string) => {
-      if (!b) return;
-      setError(null);
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.set("bucket", b);
-        params.set("prefix", p);
-        const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
-        const data = (await res.json()) as {
-          folders?: FolderItem[];
-          files?: Array<{ name: string }>;
-          error?: string;
-        };
-        if (!res.ok) {
-          throw new Error(data.error ?? "Không thể tải danh sách");
-        }
-        setFolders(Array.isArray(data.folders) ? data.folders : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
-      } finally {
-        setLoading(false);
+  const fetchObjects = useCallback(async (b: string, p: string) => {
+    if (!b) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("bucket", b);
+      params.set("prefix", p);
+      const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
+      const data = (await res.json()) as {
+        folders?: FolderItem[];
+        files?: Array<{ name: string }>;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Không thể tải danh sách");
       }
-    },
-    [],
-  );
+      setFolders(Array.isArray(data.folders) ? data.folders : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -138,9 +135,7 @@ export function R2SubtitleFolderPickerModal({
       const params = new URLSearchParams();
       params.set("bucket", bucket);
       params.set("prefix", prefix);
-      const res = await fetch(
-        `/api/dashboard/r2/objects?${params.toString()}`,
-      );
+      const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
       const data = (await res.json()) as {
         files?: Array<{ key: string; name: string; publicUrl: string }>;
         folders?: Array<{ name: string; prefix: string }>;
@@ -176,8 +171,8 @@ export function R2SubtitleFolderPickerModal({
             files?: Array<{ name: string; publicUrl: string }>;
           };
           const subFile = Array.isArray(subData.files)
-            ? subData.files.find(
-                (x: { name: string }) => SUBTITLE_EXT.test(x.name),
+            ? subData.files.find((x: { name: string }) =>
+                SUBTITLE_EXT.test(x.name),
               )
             : undefined;
           if (subFile?.publicUrl) {

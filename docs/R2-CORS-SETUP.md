@@ -9,12 +9,14 @@ Khi dùng **Upload file** trong dashboard, trình duyệt gửi request PUT lên
 3. Thêm rule, ví dụ:
 
 **Development (chạy local):**
+
 - **Allowed origins**: `http://localhost:3000` (hoặc port bạn chạy, ví dụ `http://127.0.0.1:3000`)
 - **Allowed methods**: `GET`, `PUT`, `POST`, `DELETE`, `HEAD`
 - **Allowed headers**: `*` hoặc ít nhất `Content-Type`
 - **Expose headers**: (để trống hoặc tùy chọn)
 
 **Production (domain thật):**
+
 - **Allowed origins**: `https://your-domain.com` (thay bằng tên miền dashboard của bạn, không có dấu `/` cuối)
 - Có thể thêm nhiều origin nếu bạn có nhiều domain (vd. `https://admin.your-domain.com`).
 

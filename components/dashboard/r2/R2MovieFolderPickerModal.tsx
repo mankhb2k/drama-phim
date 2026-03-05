@@ -62,32 +62,29 @@ export function R2MovieFolderPickerModal({
     }
   }, [bucket]);
 
-  const fetchObjects = useCallback(
-    async (b: string, p: string) => {
-      if (!b) return;
-      setError(null);
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.set("bucket", b);
-        params.set("prefix", p);
-        const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
-        const data = (await res.json()) as {
-          folders?: FolderItem[];
-          error?: string;
-        };
-        if (!res.ok) {
-          throw new Error(data.error ?? "Không thể tải danh sách");
-        }
-        setFolders(Array.isArray(data.folders) ? data.folders : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
-      } finally {
-        setLoading(false);
+  const fetchObjects = useCallback(async (b: string, p: string) => {
+    if (!b) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("bucket", b);
+      params.set("prefix", p);
+      const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
+      const data = (await res.json()) as {
+        folders?: FolderItem[];
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Không thể tải danh sách");
       }
-    },
-    [],
-  );
+      setFolders(Array.isArray(data.folders) ? data.folders : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -126,9 +123,7 @@ export function R2MovieFolderPickerModal({
       const params = new URLSearchParams();
       params.set("bucket", bucket);
       params.set("prefix", prefix);
-      const res = await fetch(
-        `/api/dashboard/r2/objects?${params.toString()}`,
-      );
+      const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
       const data = (await res.json()) as {
         files?: Array<{ key: string; name: string; publicUrl: string }>;
         folders?: Array<{ name: string; prefix: string }>;
@@ -143,7 +138,10 @@ export function R2MovieFolderPickerModal({
         return m ? parseInt(m[1], 10) : null;
       };
 
-      const episodeToFile = new Map<number, { key: string; publicUrl: string }>();
+      const episodeToFile = new Map<
+        number,
+        { key: string; publicUrl: string }
+      >();
 
       if (Array.isArray(data.files)) {
         for (const f of data.files) {
@@ -169,10 +167,15 @@ export function R2MovieFolderPickerModal({
             files?: Array<{ key: string; publicUrl: string }>;
           };
           const firstFile = Array.isArray(subData.files)
-            ? subData.files.find((x: { key: string }) => !x.key.endsWith(".keep")) ?? subData.files[0]
+            ? (subData.files.find(
+                (x: { key: string }) => !x.key.endsWith(".keep"),
+              ) ?? subData.files[0])
             : undefined;
           if (firstFile?.key && firstFile?.publicUrl) {
-            episodeToFile.set(n, { key: firstFile.key, publicUrl: firstFile.publicUrl });
+            episodeToFile.set(n, {
+              key: firstFile.key,
+              publicUrl: firstFile.publicUrl,
+            });
           }
         }
       }
@@ -186,7 +189,9 @@ export function R2MovieFolderPickerModal({
         }));
 
       if (items.length === 0) {
-        setError("Không tìm thấy file tap-N nào trong thư mục này (tap-1.mp4, tap-2, ...).");
+        setError(
+          "Không tìm thấy file tap-N nào trong thư mục này (tap-1.mp4, tap-2, ...).",
+        );
         return;
       }
       onApply(items);

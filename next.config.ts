@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "img.harunalegging.shop",
       },
+      {
+        protocol: "https",
+        hostname: "video.dramahd.net",
+      },
     ],
   },
 };

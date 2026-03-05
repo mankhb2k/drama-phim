@@ -3,30 +3,32 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 
-const serverSchema = z.object({
-  name: z.string().min(1, "Tên server không được để trống"),
-  embedUrl: z.string().optional(),
-  playbackUrl: z.string().optional(),
-  objectKey: z.string().optional(),
-  sourceType: z.enum(["EMBED", "DIRECT_VIDEO"]).default("EMBED"),
-  storageProvider: z.enum(["EXTERNAL", "R2"]).default("EXTERNAL"),
-  subtitleUrl: z.string().optional(),
-  vastTagUrl: z.string().optional(),
-  mimeType: z.string().optional(),
-  fileSizeBytes: z.coerce.number().int().positive().optional(),
-  durationSeconds: z.coerce.number().int().positive().optional(),
-  isActive: z.coerce.boolean().optional().default(true),
-  priority: z.coerce.number().int().min(0).optional().default(0),
-}).superRefine((value, ctx) => {
-  const hasUrl = Boolean(value.embedUrl?.trim() || value.playbackUrl?.trim());
-  if (!hasUrl) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Cần ít nhất embedUrl hoặc playbackUrl",
-      path: ["embedUrl"],
-    });
-  }
-});
+const serverSchema = z
+  .object({
+    name: z.string().min(1, "Tên server không được để trống"),
+    embedUrl: z.string().optional(),
+    playbackUrl: z.string().optional(),
+    objectKey: z.string().optional(),
+    sourceType: z.enum(["EMBED", "DIRECT_VIDEO"]).default("EMBED"),
+    storageProvider: z.enum(["EXTERNAL", "R2"]).default("EXTERNAL"),
+    subtitleUrl: z.string().optional(),
+    vastTagUrl: z.string().optional(),
+    mimeType: z.string().optional(),
+    fileSizeBytes: z.coerce.number().int().positive().optional(),
+    durationSeconds: z.coerce.number().int().positive().optional(),
+    isActive: z.coerce.boolean().optional().default(true),
+    priority: z.coerce.number().int().min(0).optional().default(0),
+  })
+  .superRefine((value, ctx) => {
+    const hasUrl = Boolean(value.embedUrl?.trim() || value.playbackUrl?.trim());
+    if (!hasUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Cần ít nhất embedUrl hoặc playbackUrl",
+        path: ["embedUrl"],
+      });
+    }
+  });
 
 const episodeSchema = z.object({
   episodeNumber: z.coerce.number().int().min(1, "Số tập phải >= 1"),
@@ -47,14 +49,14 @@ const updateMovieSchema = z.object({
     .optional()
     .refine(
       (v) => !v || v === "" || /^https?:\/\//.test(v),
-      "URL không hợp lệ"
+      "URL không hợp lệ",
     ),
   backdrop: z
     .string()
     .optional()
     .refine(
       (v) => !v || v === "" || /^https?:\/\//.test(v),
-      "URL không hợp lệ"
+      "URL không hợp lệ",
     ),
   year: z.coerce.number().int().min(1900).max(2100).optional().nullable(),
   status: z.enum(["ONGOING", "COMPLETED"]).default("ONGOING"),
@@ -88,7 +90,7 @@ export async function GET(_request: NextRequest, context: Context) {
     if (!movie) {
       return NextResponse.json(
         { error: "Không tìm thấy phim" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -97,7 +99,7 @@ export async function GET(_request: NextRequest, context: Context) {
     console.error("[GET /api/dashboard/movies/[slug]]", error);
     return NextResponse.json(
       { error: "Lỗi khi lấy chi tiết phim" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -117,7 +119,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (!current) {
       return NextResponse.json(
         { error: "Không tìm thấy phim" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -126,7 +128,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Dữ liệu không hợp lệ", errors: parsed.error.flatten() },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const data = parsed.data;
@@ -144,7 +146,7 @@ export async function PATCH(request: NextRequest, context: Context) {
       if (existing) {
         return NextResponse.json(
           { error: `Slug "${newSlug}" đã tồn tại. Vui lòng chọn slug khác.` },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -181,7 +183,11 @@ export async function PATCH(request: NextRequest, context: Context) {
                               sourceType: s.sourceType,
                               storageProvider: s.storageProvider,
                               name: s.name.trim(),
-                              embedUrl: (s.playbackUrl ?? s.embedUrl ?? "").trim(),
+                              embedUrl: (
+                                s.playbackUrl ??
+                                s.embedUrl ??
+                                ""
+                              ).trim(),
                               playbackUrl: s.playbackUrl?.trim() || null,
                               objectKey: s.objectKey?.trim() || null,
                               subtitleUrl: s.subtitleUrl?.trim() || null,
@@ -218,7 +224,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     console.error("[PATCH /api/dashboard/movies/[slug]]", error);
     return NextResponse.json(
       { error: "Lỗi khi cập nhật phim" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -235,7 +241,7 @@ export async function DELETE(_request: NextRequest, context: Context) {
     if (!movie) {
       return NextResponse.json(
         { error: "Không tìm thấy phim" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 

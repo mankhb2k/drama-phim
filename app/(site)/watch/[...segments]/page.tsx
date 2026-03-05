@@ -152,7 +152,9 @@ async function handleTreePath(parts: string[]) {
             }
             subtitleLabel={parsedPrimarySource.subtitleLabel}
             subtitleLang={parsedPrimarySource.subtitleLang}
-            vastTagUrl={primaryServer?.vastTagUrl ?? parsedPrimarySource.vastTagUrl}
+            vastTagUrl={
+              primaryServer?.vastTagUrl ?? parsedPrimarySource.vastTagUrl
+            }
           />
         ) : primarySourceUrl ? (
           <iframe
