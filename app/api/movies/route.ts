@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       prisma.movie.count({ where }),
     ]);
 
-    const items = movies.map((m) => ({
+    const items = movies.map((m: (typeof movies)[number]) => ({
       ...m,
       episodes: m._count.episodes,
       _count: undefined,

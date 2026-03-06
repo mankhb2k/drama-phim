@@ -68,7 +68,7 @@ export function Footer() {
               Thể loại phim
             </h3>
             <ul className="space-y-3">
-              {footerLinks.phim.map((link) => (
+              {footerLinks.phim.map((link: (typeof footerLinks.phim)[number]) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -87,7 +87,7 @@ export function Footer() {
               Hỗ trợ
             </h3>
             <ul className="space-y-3">
-              {footerLinks.hoTro.map((link) => (
+              {footerLinks.hoTro.map((link: (typeof footerLinks.hoTro)[number]) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -106,7 +106,7 @@ export function Footer() {
               Pháp lý
             </h3>
             <ul className="space-y-3">
-              {footerLinks.phapLy.map((link) => (
+              {footerLinks.phapLy.map((link: (typeof footerLinks.phapLy)[number]) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -129,7 +129,7 @@ export function Footer() {
             © {currentYear} Drama Phim. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-            {footerLinks.phapLy.map((link) => (
+            {footerLinks.phapLy.map((link: (typeof footerLinks.phapLy)[number]) => (
               <Link
                 key={link.href}
                 href={link.href}

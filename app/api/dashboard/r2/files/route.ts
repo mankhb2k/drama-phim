@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       // env R2 chưa cấu hình hoặc bucket khác
     }
 
-    const filesWithUrl = files.map((f) => ({
+    const filesWithUrl = files.map((f: (typeof files)[number]) => ({
       ...f,
       publicUrl: publicBaseUrl ? `${publicBaseUrl.replace(/\/+$/, "")}/${f.key}` : null,
     }));

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     });
     if (toDelete.length > 0) {
       await prisma.r2File.deleteMany({
-        where: { id: { in: toDelete.map((r) => r.id) } },
+        where: { id: { in: toDelete.map((r: (typeof toDelete)[number]) => r.id) } },
       });
     }
 

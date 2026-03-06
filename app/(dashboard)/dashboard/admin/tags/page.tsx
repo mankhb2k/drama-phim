@@ -39,7 +39,7 @@ export default async function DashboardTagsPage() {
                   </td>
                 </tr>
               ) : (
-                tags.map((t) => (
+                tags.map((t: (typeof tags)[number]) => (
                   <tr
                     key={t.id}
                     className="border-b border-border last:border-0 hover:bg-muted/30"

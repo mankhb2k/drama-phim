@@ -475,9 +475,9 @@ export function R2BucketViewClient({
           >
             {bucketSlug}
           </Link>
-          {breadcrumbSegments.map((segment, i) => {
+          {breadcrumbSegments.map((segment: string, i: number) => {
             const upToHere = breadcrumbSegments.slice(0, i + 1);
-            const href = `${baseHref}/${upToHere.map((s) => encodeURIComponent(s)).join("/")}`;
+            const href = `${baseHref}/${upToHere.map((s: string) => encodeURIComponent(s)).join("/")}`;
             const isLast = i === breadcrumbSegments.length - 1;
             return (
               <span key={href} className="flex shrink-0 items-center gap-1">

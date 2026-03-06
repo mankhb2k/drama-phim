@@ -33,7 +33,7 @@ export function FavoriteButton({ slug, className }: FavoriteButtonProps) {
       .then((res) => res.json())
       .then((data: { items?: { movieId: number }[] }) => {
         const list = data.items ?? [];
-        setIsFavorite(list.some((f) => f.movieId === movieId));
+        setIsFavorite(list.some((f: { movieId: number }) => f.movieId === movieId));
       })
       .catch(() => {});
   }, [user, movieId]);

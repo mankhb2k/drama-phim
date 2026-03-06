@@ -34,7 +34,7 @@ export function DashboardSidebar() {
         </span>
       </div>
       <nav className="flex-1 space-y-0.5 p-3">
-        {navItems.map((item) => {
+        {navItems.map((item: (typeof navItems)[number]) => {
           const isActive =
             item.href === "/dashboard/admin"
               ? pathname === "/dashboard/admin"

@@ -13,7 +13,7 @@ function isAllowedSubtitleUrl(url: string): boolean {
     const path = u.pathname.toLowerCase();
     if (/\.(vtt|srt)(\?|$)/i.test(path)) return true;
     const allowedHosts = process.env.ALLOWED_SUBTITLE_ORIGINS?.split(",")
-      .map((h) => h.trim().toLowerCase())
+      .map((h: string) => h.trim().toLowerCase())
       .filter(Boolean);
     if (allowedHosts?.length && allowedHosts.includes(u.hostname.toLowerCase()))
       return true;

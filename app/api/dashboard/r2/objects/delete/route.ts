@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const client = getR2Client();
 
   const trimmedKeys = parsed.data.keys
-    .map((k) => k.replace(/^\/+/, ""))
+    .map((k: string) => k.replace(/^\/+/, ""))
     .filter(Boolean);
 
   try {

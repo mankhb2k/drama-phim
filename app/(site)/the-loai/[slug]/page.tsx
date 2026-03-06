@@ -37,7 +37,7 @@ export default async function GenrePage({ params }: GenrePageProps) {
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
-          {genre.movies.map((movie) => (
+          {genre.movies.map((movie: (typeof genre.movies)[number]) => (
             <li key={movie.id}>
               <MovieCard
                 slug={movie.slug}

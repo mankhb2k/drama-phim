@@ -181,7 +181,7 @@ export default function ProfilePage() {
     });
     const data = await res.json();
     if (data.added === false) {
-      setFavorites((prev) => prev.filter((f) => f.movieId !== movieId));
+      setFavorites((prev) => prev.filter((f: (typeof prev)[number]) => f.movieId !== movieId));
     }
   };
 
@@ -310,7 +310,7 @@ export default function ProfilePage() {
             className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
             onClick={(e) => e.stopPropagation()}
           >
-            {watchHistory.map((h) => (
+            {watchHistory.map((h: (typeof watchHistory)[number]) => (
               <Link
                 key={h.id}
                 href={
@@ -400,7 +400,7 @@ export default function ProfilePage() {
             className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
             onClick={(e) => e.stopPropagation()}
           >
-            {favorites.map((f) => (
+            {favorites.map((f: (typeof favorites)[number]) => (
               <div key={f.id} className="group relative shrink-0">
                 <Link
                   href={`/movies/${f.movie.slug}`}

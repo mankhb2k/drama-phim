@@ -166,12 +166,12 @@ export async function PATCH(request: NextRequest, context: Context) {
           year: data.year ?? null,
           status: data.status,
           audioType: data.audioType ?? "NONE",
-          genres: { set: data.genreIds.map((id) => ({ id })) },
-          tags: { set: data.tagIds.map((id) => ({ id })) },
+          genres: { set: data.genreIds.map((id: number) => ({ id })) },
+          tags: { set: data.tagIds.map((id: number) => ({ id })) },
           episodes:
             data.episodes.length > 0
               ? {
-                  create: data.episodes.map((ep) => ({
+                  create: data.episodes.map((ep: (typeof data.episodes)[number]) => ({
                     episodeNumber: ep.episodeNumber,
                     watchSlug: `tap-${ep.episodeNumber}`,
                     name: ep.name?.trim() || `Tập ${ep.episodeNumber}`,
@@ -179,7 +179,7 @@ export async function PATCH(request: NextRequest, context: Context) {
                     servers:
                       ep.servers.length > 0
                         ? {
-                            create: ep.servers.map((s, i) => ({
+                            create: ep.servers.map((s: (typeof ep.servers)[number], i: number) => ({
                               sourceType: s.sourceType,
                               storageProvider: s.storageProvider,
                               name: s.name.trim(),

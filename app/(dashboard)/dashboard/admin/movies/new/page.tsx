@@ -89,13 +89,13 @@ export default function DashboardNewMoviePage() {
 
   const toggleGenre = (id: number) => {
     setGenreIds((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((g: number) => g !== id) : [...prev, id],
     );
   };
 
   const toggleTag = (id: number) => {
     setTagIds((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((t: number) => t !== id) : [...prev, id],
     );
   };
 
@@ -103,7 +103,7 @@ export default function DashboardNewMoviePage() {
     const nextNum =
       episodes.length === 0
         ? 1
-        : Math.max(...episodes.map((e) => e.episodeNumber)) + 1;
+        : Math.max(...episodes.map((e: EpisodeRow) => e.episodeNumber)) + 1;
     setEpisodes((prev) => [
       ...prev,
       {
@@ -117,7 +117,7 @@ export default function DashboardNewMoviePage() {
   };
 
   const removeEpisode = (id: string) => {
-    setEpisodes((prev) => prev.filter((e) => e.id !== id));
+    setEpisodes((prev) => prev.filter((e: EpisodeRow) => e.id !== id));
   };
 
   const updateEpisode = (
@@ -126,13 +126,13 @@ export default function DashboardNewMoviePage() {
     value: number | string | ServerRow[],
   ) => {
     setEpisodes((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
+      prev.map((e: EpisodeRow) => (e.id === id ? { ...e, [field]: value } : e)),
     );
   };
 
   const addServer = (episodeId: string) => {
     setEpisodes((prev) =>
-      prev.map((e) =>
+      prev.map((e: EpisodeRow) =>
         e.id === episodeId
           ? {
               ...e,
@@ -161,9 +161,9 @@ export default function DashboardNewMoviePage() {
 
   const removeServer = (episodeId: string, serverId: string) => {
     setEpisodes((prev) =>
-      prev.map((e) =>
+      prev.map((e: EpisodeRow) =>
         e.id === episodeId
-          ? { ...e, servers: e.servers.filter((s) => s.id !== serverId) }
+          ? { ...e, servers: e.servers.filter((s: ServerRow) => s.id !== serverId) }
           : e,
       ),
     );
@@ -173,7 +173,7 @@ export default function DashboardNewMoviePage() {
     if (items.length === 0) return;
     const maxEp = Math.max(...items.map((i: R2ApplyItem) => i.episodeNumber));
     setEpisodes((prev) => {
-      const byNum = new Map(prev.map((e) => [e.episodeNumber, e]));
+      const byNum = new Map(prev.map((e: EpisodeRow) => [e.episodeNumber, e]));
       for (let n = 1; n <= maxEp; n++) {
         if (!byNum.has(n)) {
           byNum.set(n, {
@@ -188,16 +188,16 @@ export default function DashboardNewMoviePage() {
       const next = Array.from(byNum.values()).sort(
         (a, b) => a.episodeNumber - b.episodeNumber,
       );
-      return next.map((ep) => {
+      return next.map((ep: EpisodeRow) => {
         const item = items.find(
           (i: R2ApplyItem) => i.episodeNumber === ep.episodeNumber,
         );
         if (!item) return ep;
-        const existingR2 = ep.servers.find((s) => s.storageProvider === "R2");
+        const existingR2 = ep.servers.find((s: ServerRow) => s.storageProvider === "R2");
         if (existingR2) {
           return {
             ...ep,
-            servers: ep.servers.map((s) =>
+            servers: ep.servers.map((s: ServerRow) =>
               s.id === existingR2.id
                 ? {
                     ...s,
@@ -240,7 +240,7 @@ export default function DashboardNewMoviePage() {
   const handleR2SubApply = useCallback((items: R2SubApplyItem[]) => {
     if (items.length === 0) return;
     setEpisodes((prev) =>
-      prev.map((ep) => {
+      prev.map((ep: EpisodeRow) => {
         const item = items.find(
           (i: R2SubApplyItem) => i.episodeNumber === ep.episodeNumber,
         );
@@ -258,7 +258,7 @@ export default function DashboardNewMoviePage() {
     value: ServerRow[keyof ServerRow],
   ) => {
     setEpisodes((prev) =>
-      prev.map((e) =>
+      prev.map((e: EpisodeRow) =>
         e.id === episodeId
           ? {
               ...e,
@@ -289,7 +289,7 @@ export default function DashboardNewMoviePage() {
         status,
         genreIds,
         tagIds,
-        episodes: episodes.map((ep) => ({
+        episodes: episodes.map((ep: EpisodeRow) => ({
           episodeNumber: ep.episodeNumber,
           name: ep.name.trim() || undefined,
           subtitleUrl: ep.subtitleUrl?.trim() || undefined,
@@ -693,7 +693,7 @@ export default function DashboardNewMoviePage() {
             </div>
           ) : (
             <div className="flex flex-col gap-6">
-              {episodes.map((ep) => (
+              {episodes.map((ep: EpisodeRow) => (
                 <div
                   key={ep.id}
                   className="rounded-lg border border-border bg-muted/20 p-4"
@@ -779,7 +779,7 @@ export default function DashboardNewMoviePage() {
                         tên (VD: MixDrop) + link embed.
                       </p>
                     ) : (
-                      ep.servers.map((srv) => (
+                      ep.servers.map((srv: ServerRow) => (
                         <div
                           key={srv.id}
                           className="flex flex-wrap items-center gap-2 rounded border border-border bg-background p-2"
@@ -845,13 +845,13 @@ export default function DashboardNewMoviePage() {
       <R2MovieFolderPickerModal
         open={r2MoviePickerOpen}
         onClose={() => setR2MoviePickerOpen(false)}
-        episodes={episodes.map((ep) => ({ episodeNumber: ep.episodeNumber }))}
+        episodes={episodes.map((ep: EpisodeRow) => ({ episodeNumber: ep.episodeNumber }))}
         onApply={handleR2Apply}
       />
       <R2SubtitleFolderPickerModal
         open={r2SubPickerOpen}
         onClose={() => setR2SubPickerOpen(false)}
-        episodes={episodes.map((ep) => ({ episodeNumber: ep.episodeNumber }))}
+        episodes={episodes.map((ep: EpisodeRow) => ({ episodeNumber: ep.episodeNumber }))}
         onApply={handleR2SubApply}
       />
     </div>

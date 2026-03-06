@@ -29,7 +29,7 @@ export async function GET() {
     },
   });
 
-  const items = list.map((h) => ({
+  const items = list.map((h: (typeof list)[number]) => ({
     id: h.id,
     movieId: h.movieId,
     episodeId: h.episodeId,

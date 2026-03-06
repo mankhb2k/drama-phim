@@ -28,7 +28,7 @@ export async function GET() {
     },
   });
 
-  const items = list.map((f) => ({
+  const items = list.map((f: (typeof list)[number]) => ({
     id: f.id,
     movieId: f.movieId,
     createdAt: f.createdAt.toISOString(),

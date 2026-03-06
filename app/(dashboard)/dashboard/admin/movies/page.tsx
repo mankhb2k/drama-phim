@@ -64,7 +64,7 @@ export default async function DashboardMoviesPage() {
                   </td>
                 </tr>
               ) : (
-                movies.map((movie) => (
+                movies.map((movie: (typeof movies)[number]) => (
                   <tr
                     key={movie.id}
                     className="border-b border-border last:border-0 hover:bg-muted/30"
@@ -92,7 +92,7 @@ export default async function DashboardMoviesPage() {
                       {movie._count.episodes}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {movie.genres.map((g) => g.name).join(", ") || "—"}
+                      {movie.genres.map((g: (typeof movie.genres)[number]) => g.name).join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">

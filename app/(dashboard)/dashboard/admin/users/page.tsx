@@ -21,7 +21,7 @@ const ROLES = [
 ] as const;
 
 function roleLabel(role: string): string {
-  return ROLES.find((r) => r.value === role)?.label ?? role;
+  return ROLES.find((r: (typeof ROLES)[number]) => r.value === role)?.label ?? role;
 }
 
 export default function DashboardUsersPage() {
@@ -174,7 +174,7 @@ export default function DashboardUsersPage() {
         return;
       }
       setUsers((prev) =>
-        prev.map((u) => (u.id === editingUser.id ? { ...u, ...data } : u)),
+        prev.map((u: UserRow) => (u.id === editingUser.id ? { ...u, ...data } : u)),
       );
       closeEditModal();
     } catch {
@@ -203,7 +203,7 @@ export default function DashboardUsersPage() {
         setEditError(data.error ?? "Xóa thất bại");
         return;
       }
-      setUsers((prev) => prev.filter((u) => u.id !== editingUser.id));
+      setUsers((prev) => prev.filter((u: UserRow) => u.id !== editingUser.id));
       closeEditModal();
     } catch {
       setEditError("Lỗi kết nối");
@@ -313,7 +313,7 @@ export default function DashboardUsersPage() {
                 }
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               >
-                {ROLES.map((r) => (
+                {ROLES.map((r: (typeof ROLES)[number]) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
@@ -378,7 +378,7 @@ export default function DashboardUsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  users.map((user) => (
+                  users.map((user: UserRow) => (
                     <tr
                       key={user.id}
                       className="border-b border-border last:border-0 hover:bg-muted/30"
@@ -529,7 +529,7 @@ export default function DashboardUsersPage() {
                   disabled={currentUserId === editingUser.id}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
                 >
-                  {ROLES.map((r) => (
+                  {ROLES.map((r: (typeof ROLES)[number]) => (
                     <option key={r.value} value={r.value}>
                       {r.label}
                     </option>

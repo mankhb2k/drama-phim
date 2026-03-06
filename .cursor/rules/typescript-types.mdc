@@ -2,22 +2,24 @@
 alwaysApply: true
 ---
 
-# TypeScript — Gõ kiểu cho hàm
+# TypeScript — Luôn thêm kiểu cho tham số
 
-Luôn khai báo **type rõ ràng** cho tham số của hàm (callback, map/filter/find, handler…) để tránh lỗi `Parameter 'x' implicitly has an 'any' type` (TS7006).
+**Nhớ:** Mọi tham số hàm (callback, map/filter/find, handler…) **phải có type rõ ràng**. Không để tham số không kiểu — tránh lỗi `Parameter 'x' implicitly has an 'any' type` (TS7006) và giúp code an toàn hơn.
 
 ## Quy tắc
 
-- **Callback trong .map / .filter / .find / .reduce**: Gõ kiểu cho tham số, ví dụ `(item: (typeof arr)[number]) => ...` hoặc dùng type/interface có sẵn.
+- **Callback trong .map / .filter / .find / .reduce / .forEach / .some / .every**: Luôn gõ kiểu cho tham số, ví dụ `(item: (typeof arr)[number]) => ...` hoặc dùng type/interface có sẵn.
 - **Props của component**: Dùng `interface` hoặc `type` cho props.
-- **Handler (onClick, onSubmit…)**: Tham số dùng type từ React/SDK (vd. `React.MouseEvent<HTMLButtonElement>`).
+- **Handler (onClick, onSubmit, onChange…)**: Tham số dùng type từ React/SDK (vd. `React.MouseEvent<HTMLButtonElement>`, `React.ChangeEvent<HTMLInputElement>`).
 - **API/Prisma**: Dùng type inference khi cần: `(typeof data.items)[number]`, hoặc import type từ Prisma/API.
+- **Object.entries().map**: Gõ kiểu cho `[key, value]`, ví dụ `([key, item]: [string, ItemType]) => ...`.
 
 ## Ví dụ
 
 ```typescript
 // ✅ GOOD — type rõ ràng
 const current = items.find((item: (typeof items)[number]) => item.id === id);
+genres.map((g: (typeof genres)[number]) => <Row key={g.id} data={g} />);
 
 // ✅ GOOD — interface
 interface User {
@@ -26,8 +28,9 @@ interface User {
 }
 users.map((user: User) => user.name);
 
-// ❌ BAD — implicit any
+// ❌ BAD — thiếu type (implicit any)
 items.find((ep) => ep.id === id);
+movies.map((movie) => ...);
 ```
 
-**Tóm tắt:** Mọi tham số hàm đều có type; không để TypeScript suy ra `any`.
+**Tóm tắt:** Luôn thêm kiểu cho tham số; không viết callback không type.

@@ -258,7 +258,7 @@ export function R2SubtitleFolderPickerModal({
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {buckets.map((b) => (
+                {buckets.map((b: (typeof buckets)[number]) => (
                   <button
                     key={b.name}
                     type="button"
@@ -290,7 +290,7 @@ export function R2SubtitleFolderPickerModal({
                   >
                     {bucket}
                   </button>
-                  {pathSegments.map((seg, i) => (
+                  {pathSegments.map((seg: string, i: number) => (
                     <span key={i} className="flex items-center gap-1">
                       <ChevronRight className="size-4 text-muted-foreground" />
                       <button
@@ -335,7 +335,7 @@ export function R2SubtitleFolderPickerModal({
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {folders.map((folder) => (
+                    {folders.map((folder: FolderItem) => (
                       <button
                         key={folder.prefix}
                         type="button"

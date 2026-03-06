@@ -127,7 +127,7 @@ export function Header() {
             aria-hidden="true"
           />
           <div className="absolute right-0 top-full z-50 mt-1 max-h-[70vh] min-w-[160px] overflow-y-auto rounded-lg border border-border bg-popover py-1 shadow-lg">
-            {moreGenres.map((link) => (
+            {moreGenres.map((link: (typeof genreLinks)[number]) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -185,7 +185,7 @@ export function Header() {
           >
             {/* Mobile row 2-left: visible genre tabs */}
             <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">
-              {visibleGenres.map((link) => (
+              {visibleGenres.map((link: (typeof genreLinks)[number]) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -262,7 +262,7 @@ export function Header() {
             <div className="w-9 shrink-0" aria-hidden="true" />
             {/* Desktop row 2-center: visible genre tabs */}
             <nav className="flex min-w-0 flex-1 justify-evenly items-center gap-4 overflow-x-auto scrollbar-hide px-2">
-              {visibleGenres.map((link) => (
+              {visibleGenres.map((link: (typeof genreLinks)[number]) => (
                 <Link
                   key={link.href}
                   href={link.href}

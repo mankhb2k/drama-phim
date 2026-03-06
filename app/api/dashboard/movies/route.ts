@@ -108,15 +108,15 @@ export async function POST(request: NextRequest) {
         status: data.status,
         audioType: data.audioType ?? "NONE",
         genres: data.genreIds.length
-          ? { connect: data.genreIds.map((id) => ({ id })) }
+          ? { connect: data.genreIds.map((id: number) => ({ id })) }
           : undefined,
         tags: data.tagIds.length
-          ? { connect: data.tagIds.map((id) => ({ id })) }
+          ? { connect: data.tagIds.map((id: number) => ({ id })) }
           : undefined,
         episodes:
           data.episodes.length > 0
             ? {
-                create: data.episodes.map((ep) => ({
+                create: data.episodes.map((ep: (typeof data.episodes)[number]) => ({
                   episodeNumber: ep.episodeNumber,
                   watchSlug: `tap-${ep.episodeNumber}`,
                   name: ep.name?.trim() || `Tập ${ep.episodeNumber}`,
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
                   servers:
                     ep.servers.length > 0
                       ? {
-                          create: ep.servers.map((s, i) => ({
+                          create: ep.servers.map((s: (typeof ep.servers)[number], i: number) => ({
                             sourceType: s.sourceType,
                             storageProvider: s.storageProvider,
                             name: s.name.trim(),
