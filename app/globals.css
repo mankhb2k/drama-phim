@@ -160,32 +160,56 @@
   display: none !important;
 }
 
-/* ArtPlayer: ẩn hoàn toàn chữ Play/Pause (notice) để tránh nhấp nháy */
+/* ArtPlayer: ẩn hoàn toàn UI mặc định (notice, nút play lớn, mask, info) – dùng overlay custom */
 .art-drama-player .art-notice,
 .art-drama-player .art-notice *,
 .art-drama-player .art-state,
-.art-drama-player .art-info {
+.art-drama-player .art-info,
+.art-drama-player .art-mask,
+.art-drama-player .art-mask * {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-/* Phụ đề ArtPlayer: bước 1 – đưa lên khung xanh (vị trí dọc) */
+/* Phụ đề ArtPlayer: cao lên trên, text wrap trong khung, chữ trắng viền đen */
 .art-drama-player .art-subtitle {
   position: absolute !important;
-  bottom: 33% !important;
+  bottom: 30% !important;
+  left: 20% !important;
+  right: 20% !important;
+  max-width: 60% !important;
+  margin: 0 auto !important;
+  padding: 0 0.5em !important;
+  text-align: center !important;
+  white-space: pre-wrap !important;
+  text-wrap: balance !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.4 !important;
+  font-size: 1.5em !important;
+  font-weight: 700 !important;
+}
+.art-drama-player .art-subtitle:empty {
+  display: none !important;
 }
 
-/* Phụ đề ArtPlayer: chữ trắng, viền đen, không nền */
+/* Phụ đề: chữ trắng, viền đen, không nền – áp cho cả khi load sub bằng JS */
 .art-drama-player .art-subtitle,
 .art-drama-player .art-subtitle * {
   background: none !important;
   color: #fff !important;
-  font-family: system-ui, -apple-system, sans-serif;
-  -webkit-text-stroke: 1px #000;
-  text-stroke: 1px #000;
-  paint-order: stroke fill;
-  -webkit-paint-order: stroke fill;
-  text-shadow: none;
+  font-family: Helvetica, Arial, sans-serif !important;
+  -webkit-text-stroke: 1px #000 !important;
+  paint-order: stroke fill !important;
+  -webkit-paint-order: stroke fill !important;
+  text-shadow:
+    0 0 2px #000,
+    0 0 2px #000,
+    1px 1px 2px #000,
+    -1px -1px 2px #000,
+    0 1px 1px #000,
+    1px 0 1px #000,
+    -1px 0 1px #000,
+    0 -1px 1px #000 !important;
 }
