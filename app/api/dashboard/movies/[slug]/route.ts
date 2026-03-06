@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 
+type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 const serverSchema = z
   .object({
     name: z.string().min(1, "Tên server không được để trống"),
@@ -151,7 +153,7 @@ export async function PATCH(request: NextRequest, context: Context) {
       }
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: PrismaTx) => {
       await tx.episode.deleteMany({ where: { movieId: current.id } });
       await tx.movie.update({
         where: { id: current.id },
