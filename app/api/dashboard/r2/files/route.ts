@@ -83,7 +83,8 @@ export async function GET(request: NextRequest) {
     const files = prefixWithSlash
       ? allFiles
           .filter(
-            (f) => !f.key.slice(prefixWithSlash.length).includes("/"),
+            (f: (typeof allFiles)[number]) =>
+              !f.key.slice(prefixWithSlash.length).includes("/"),
           )
           .slice(skip, skip + take)
       : allFiles;
