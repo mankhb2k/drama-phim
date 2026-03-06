@@ -262,7 +262,7 @@ export default function DashboardNewMoviePage() {
         e.id === episodeId
           ? {
               ...e,
-              servers: e.servers.map((s) =>
+              servers: e.servers.map((s: ServerRow) =>
                 s.id === serverId ? { ...s, [field]: value } : s,
               ),
             }
@@ -295,10 +295,10 @@ export default function DashboardNewMoviePage() {
           subtitleUrl: ep.subtitleUrl?.trim() || undefined,
           servers: ep.servers
             .filter(
-              (s) =>
+              (s: ServerRow) =>
                 s.name.trim() && (s.playbackUrl.trim() || s.embedUrl.trim()),
             )
-            .map((s, i) => ({
+            .map((s: ServerRow, i: number) => ({
               name: s.name.trim(),
               embedUrl: s.embedUrl.trim(),
               playbackUrl: s.playbackUrl.trim() || undefined,

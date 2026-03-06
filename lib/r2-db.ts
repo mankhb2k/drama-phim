@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@/lib/generated/prisma";
 
 /**
  * Lấy hoặc tạo R2Folder theo bucket + prefix.
