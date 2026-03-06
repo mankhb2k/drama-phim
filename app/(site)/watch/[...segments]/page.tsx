@@ -7,7 +7,8 @@ import {
   parseLegacyWatchSlug,
 } from "@/lib/watch-slug";
 import { EpisodeSwitcher } from "@/components/watch/EpisodeSwitcher";
-import { VideoJsPlayer } from "@/components/watch/VideoJsPlayer";
+import { VideoJsPlayer } from "@/components/watch/VideoPlayer";
+import { WatchPageAd } from "@/components/watch/WatchPageAd";
 import { ArrowLeft } from "lucide-react";
 
 interface WatchCatchAllPageProps {
@@ -125,7 +126,7 @@ async function handleTreePath(parts: string[]) {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link
           href={`/movies/${movie.slug}`}
@@ -141,7 +142,9 @@ async function handleTreePath(parts: string[]) {
         </span>
       </div>
 
-      <div className="relative mx-auto aspect-square w-full max-w-3xl overflow-hidden rounded-xl bg-black">
+      <div className="flex flex-col items-center gap-2">
+        <WatchPageAd />
+        <div className="relative mx-auto aspect-square w-full max-w-3xl overflow-hidden rounded-xl bg-black">
         {canUseVideoJs && parsedPrimarySource ? (
           <VideoJsPlayer
             src={parsedPrimarySource.src}
@@ -169,6 +172,7 @@ async function handleTreePath(parts: string[]) {
             Chưa có link xem cho tập này.
           </div>
         )}
+        </div>
       </div>
 
       <EpisodeSwitcher

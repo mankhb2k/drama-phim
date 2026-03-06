@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Drama Phim - Xem phim online miễn phí",
   description:
     "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.",
+  other: {
+    "6a97888e-site-verification": "faedaa45f9f5abf74cebda0724a8a98d",
+  },
 };
 
 export default function RootLayout({
