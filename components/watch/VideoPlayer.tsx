@@ -273,9 +273,11 @@ export function VideoJsPlayer({
       if (playerRef.current && !playerRef.current.isDestroy) return;
 
       Artplayer.NOTICE_TIME = 0;
+      const videoUrl =
+        src + (src.includes("#") ? "" : "#t=0.001");
       const art = new Artplayer({
         container: el,
-        url: src,
+        url: videoUrl,
         autoplay: false,
         theme: "#f59e0b",
         volume: 1,
