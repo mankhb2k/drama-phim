@@ -16,6 +16,39 @@ import Artplayer from "artplayer";
 
 type ArtplayerInstance = InstanceType<typeof Artplayer>;
 
+function getArtplayerVideo(art: ArtplayerInstance | null):
+  | (HTMLVideoElement & {
+      webkitEnterFullscreen?: () => void;
+      webkitExitFullscreen?: () => void;
+      webkitDisplayingFullscreen?: boolean;
+    })
+  | undefined {
+  if (!art) return undefined;
+  const a = art as unknown as {
+    $video?: HTMLVideoElement;
+    video?: HTMLVideoElement;
+  };
+  return (a.$video ?? a.video) as
+    | (HTMLVideoElement & {
+        webkitEnterFullscreen?: () => void;
+        webkitExitFullscreen?: () => void;
+        webkitDisplayingFullscreen?: boolean;
+      })
+    | undefined;
+}
+
+function isIOSDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  // iPadOS 13+ reports as Mac, but has touch points
+  const isIPadOS =
+    /Macintosh/.test(ua) && typeof navigator.maxTouchPoints === "number"
+      ? navigator.maxTouchPoints > 1
+      : false;
+  return isIOS || isIPadOS;
+}
+
 type VideoJsPlayerProps = {
   src: string;
   subtitleSrc?: string | null;
@@ -40,6 +73,7 @@ export function VideoJsPlayer({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -48,9 +82,20 @@ export function VideoJsPlayer({
     Boolean(subtitleSrc),
   );
   const hideControlsTimerRef = useRef<number | null>(null);
+  const suppressRevealUntilRef = useRef<number>(0);
+  const scrollLockRef = useRef<{
+    scrollY: number;
+    htmlOverflow: string;
+    bodyPosition: string;
+    bodyTop: string;
+    bodyLeft: string;
+    bodyRight: string;
+    bodyWidth: string;
+  } | null>(null);
   const subtitleBlobUrlRef = useRef<string | null>(null);
   const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
   const hasSubtitle = Boolean(subtitleSrc);
+  const isIOS = useMemo(() => isIOSDevice(), []);
 
   const clearHideControlsTimer = () => {
     if (hideControlsTimerRef.current !== null) {
@@ -66,12 +111,36 @@ export function VideoJsPlayer({
     hideControlsTimerRef.current = window.setTimeout(() => {
       setIsControlsVisible(false);
       setIsSettingsOpen(false);
-    }, 3000);
+    }, 2000);
   };
 
-  const revealControls = () => {
+  const hideControlsImmediately = () => {
+    clearHideControlsTimer();
+    setIsControlsVisible(false);
+    setIsSettingsOpen(false);
+    suppressRevealUntilRef.current = Date.now() + 280;
+  };
+
+  const revealControls = (byMouseMove = false) => {
+    if (byMouseMove && Date.now() < suppressRevealUntilRef.current) return;
     setIsControlsVisible(true);
     scheduleHideControls();
+  };
+
+  const handleWrapperPointer = (e: React.MouseEvent | React.TouchEvent) => {
+    const target = e.target as Node;
+    const isControlsArea =
+      target instanceof Element &&
+      target.closest("[data-controls-area]") !== null;
+    if (isControlsArea) {
+      revealControls();
+      return;
+    }
+    if (isPlaying) {
+      hideControlsImmediately();
+    } else {
+      revealControls();
+    }
   };
 
   const seekBy = (seconds: number) => {
@@ -119,7 +188,28 @@ export function VideoJsPlayer({
 
   const toggleFullscreen = () => {
     const wrapper = wrapperRef.current;
+    const art = playerRef.current;
     if (!wrapper) return;
+
+    const video = getArtplayerVideo(art);
+    const isIOS =
+      typeof navigator !== "undefined" &&
+      /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isIOS && video) {
+      const displaying = video.webkitDisplayingFullscreen === true;
+      if (displaying && typeof video.webkitExitFullscreen === "function") {
+        video.webkitExitFullscreen();
+      } else if (
+        !displaying &&
+        typeof video.webkitEnterFullscreen === "function"
+      ) {
+        video.webkitEnterFullscreen();
+      }
+      return;
+    }
+
+    if (typeof wrapper.requestFullscreen !== "function") return;
     if (document.fullscreenElement === wrapper) {
       void document.exitFullscreen();
     } else {
@@ -237,6 +327,27 @@ export function VideoJsPlayer({
           syncState();
         });
 
+        const vid = getArtplayerVideo(art);
+        if (vid) {
+          const onWebkitEndFullscreen = () => setIsFullscreen(false);
+          const onWebkitBeginFullscreen = () => setIsFullscreen(true);
+          vid.addEventListener("webkitendfullscreen", onWebkitEndFullscreen);
+          vid.addEventListener(
+            "webkitbeginfullscreen",
+            onWebkitBeginFullscreen,
+          );
+          art.on("destroy", () => {
+            vid.removeEventListener(
+              "webkitendfullscreen",
+              onWebkitEndFullscreen,
+            );
+            vid.removeEventListener(
+              "webkitbeginfullscreen",
+              onWebkitBeginFullscreen,
+            );
+          });
+        }
+
         const rawSubSrc = subtitleSrc?.trim();
         if (rawSubSrc) {
           const resolveSubSrc = async (): Promise<string> => {
@@ -311,9 +422,9 @@ export function VideoJsPlayer({
     <div
       ref={wrapperRef}
       className="art-drama-player absolute inset-0 size-full"
-      onMouseMove={revealControls}
-      onTouchStart={revealControls}
-      onClick={revealControls}
+      onMouseMove={() => revealControls(true)}
+      onTouchStart={handleWrapperPointer}
+      onClick={handleWrapperPointer}
     >
       <div
         ref={containerRef}
@@ -323,6 +434,7 @@ export function VideoJsPlayer({
       {isReady && (
         <>
           <div
+            data-controls-area
             className={`absolute left-1/2 top-1/2 z-30 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 transition-opacity duration-200 ${
               isControlsVisible || !isPlaying
                 ? "opacity-100"
@@ -380,6 +492,7 @@ export function VideoJsPlayer({
       {isReady && (
         <>
           <div
+            data-controls-area
             className={`absolute inset-x-0 bottom-0 z-40 space-y-2 bg-gradient-to-t from-black/50 via-black/20 to-transparent p-3 text-white transition-opacity duration-200 ${
               isControlsVisible || !isPlaying
                 ? "opacity-100"
@@ -416,7 +529,7 @@ export function VideoJsPlayer({
                 <button
                   type="button"
                   onClick={toggleMute}
-                  className="inline-flex size-8 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+                  className="inline-flex size-6 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
                   aria-label={isMuted ? "Bật tiếng" : "Tắt tiếng"}
                 >
                   {isMuted || volume === 0 ? (
@@ -435,7 +548,7 @@ export function VideoJsPlayer({
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     onVolumeChange(Number(e.target.value))
                   }
-                  className="h-1.5 w-28 cursor-pointer accent-zinc-300"
+                  className="h-1.5 w-26 cursor-pointer accent-zinc-300"
                   aria-label="Âm lượng"
                 />
 

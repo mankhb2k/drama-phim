@@ -89,7 +89,7 @@ export function EpisodeSwitcher({
         <p className="mb-3 text-sm font-medium text-muted-foreground">
           {movieTitle} — Chọn tập
         </p>
-        <div className="grid max-h-[280px] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+        <div className="grid max-h-[17.5rem] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
           {episodes.map((ep: (typeof episodes)[number]) => {
             const isActive = ep.episodeNumber === currentEpisodeNumber;
             return (

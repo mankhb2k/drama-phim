@@ -26,7 +26,7 @@ export function MovieCardHero({
 
   return (
     <Link href={`/movies/${slug}`} className="group block">
-      <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden rounded-2xl sm:aspect-[21/9] sm:min-h-[280px] md:min-h-[320px]">
+      <div className="relative aspect-[16/9] min-h-[12.5rem] overflow-hidden rounded-2xl sm:aspect-[21/9] sm:min-h-[17.5rem] md:min-h-80">
         {backdropUrl ? (
           <Image
             src={backdropUrl}

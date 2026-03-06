@@ -46,7 +46,7 @@ export function R2ActionsToolbar({
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-3 py-2">
       <div className="flex flex-1 flex-wrap items-center gap-2">
-        <div className="relative min-w-[180px] max-w-md flex-1">
+        <div className="relative min-w-[11.25rem] max-w-md flex-1">
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
           <input
             className="h-8 w-full rounded border border-border bg-background pl-7 pr-2 text-xs outline-none ring-0 placeholder:text-muted-foreground focus:border-primary"

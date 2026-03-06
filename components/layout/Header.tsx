@@ -126,7 +126,7 @@ export function Header() {
             onClick={() => setGenreMenuOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 top-full z-50 mt-1 max-h-[70vh] min-w-[160px] overflow-y-auto rounded-lg border border-border bg-popover py-1 shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-1 max-h-[70vh] min-w-40 overflow-y-auto rounded-lg border border-border bg-popover py-1 shadow-lg">
             {moreGenres.map((link: (typeof genreLinks)[number]) => (
               <Link
                 key={link.href}
@@ -149,12 +149,12 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full min-w-0 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="container mx-auto min-w-0 max-w-full px-4 sm:px-6 lg:px-8">
         {/* ---------- MOBILE: Hàng 1 = Logo + Search, Hàng 2 = Thể loại + Dropdown + Profile ---------- */}
-        <div className="flex flex-col sm:hidden">
+        <div className="flex min-w-0 flex-col sm:hidden">
           {/* Mobile row 1: brand + search */}
-          <div className="flex h-12 min-h-12 items-center gap-3 py-2">
+          <div className="flex h-12 min-h-12 min-w-0 items-center gap-2 py-2">
             <Link
               href="/"
               className="flex shrink-0 items-center gap-1.5 text-base font-bold text-primary"
@@ -162,13 +162,13 @@ export function Header() {
               <span className="rounded bg-primary px-1.5 py-0.5 text-primary-foreground">
                 Drama
               </span>
-              <span>Phim</span>
+              <span className="truncate">Phim</span>
             </Link>
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <input
                 type="search"
                 placeholder="Tìm phim, diễn viên..."
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
               />
               <button
                 type="button"
@@ -181,7 +181,7 @@ export function Header() {
           </div>
           <div
             ref={genreNavRefMobile}
-            className="relative left-1/2 flex h-11 w-[calc(100vw-8px)] shrink-0 -translate-x-1/2 items-center justify-between gap-2 border-t border-border/40"
+            className="relative flex h-11 min-w-0 items-center justify-between gap-2 border-t border-border/40"
           >
             {/* Mobile row 2-left: visible genre tabs */}
             <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">

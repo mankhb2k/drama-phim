@@ -320,13 +320,13 @@ export default function ProfilePage() {
                 }
                 className="group shrink-0"
               >
-                <div className="relative aspect-[2/3] w-[120px] overflow-hidden rounded-lg bg-muted sm:w-[140px]">
+                <div className="relative aspect-[2/3] w-[7.5rem] overflow-hidden rounded-lg bg-muted sm:w-[8.75rem]">
                   {h.movie.poster ? (
                     <Image
                       src={h.movie.poster}
                       alt={h.movie.title}
                       fill
-                      sizes="140px"
+                      sizes="8.75rem"
                       className="object-cover transition-transform group-hover:scale-105"
                     />
                   ) : (
@@ -406,13 +406,13 @@ export default function ProfilePage() {
                   href={`/movies/${f.movie.slug}`}
                   className="block"
                 >
-                  <div className="relative aspect-[2/3] w-[120px] overflow-hidden rounded-lg bg-muted sm:w-[140px]">
+                  <div className="relative aspect-[2/3] w-[7.5rem] overflow-hidden rounded-lg bg-muted sm:w-[8.75rem]">
                     {f.movie.poster ? (
                       <Image
                         src={f.movie.poster}
                         alt={f.movie.title}
                         fill
-                        sizes="140px"
+                        sizes="8.75rem"
                         className="object-cover transition-transform group-hover:scale-105"
                       />
                     ) : (

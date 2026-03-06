@@ -148,7 +148,7 @@ export function FileTable({
                       onChange={() => handleToggle(file.key)}
                     />
                   </td>
-                  <td className="max-w-[260px] px-3 py-2 align-top">
+                  <td className="max-w-[16.25rem] px-3 py-2 align-top">
                     {renamingKey === file.key ? (
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-1">

@@ -34,8 +34,8 @@ export function MovieCard({
       href={`/movies/${slug}`}
       className={cn(
         "group block shrink-0 transition-transform active:scale-[0.98]",
-        variant === "default" && "w-[140px] sm:w-[160px]",
-        variant === "compact" && "w-[120px] sm:w-[140px]",
+        variant === "default" && "w-[8.75rem] sm:w-40",
+        variant === "compact" && "w-[7.5rem] sm:w-[8.75rem]",
         className,
       )}
     >
@@ -52,7 +52,7 @@ export function MovieCard({
             src={posterUrl}
             alt={title}
             fill
-            sizes="(max-width: 640px) 140px, 160px"
+            sizes="(max-width: 40rem) 8.75rem, 10rem"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
@@ -72,12 +72,12 @@ export function MovieCard({
         {/* Badges */}
         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
           {status === "ONGOING" && (
-            <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-500/90 text-white">
+            <span className="rounded px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide bg-amber-500/90 text-white">
               Đang chiếu
             </span>
           )}
           {episodes !== undefined && episodes > 0 && (
-            <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-black/60 text-white backdrop-blur-sm">
+            <span className="rounded px-1.5 py-0.5 text-[0.625rem] font-medium bg-black/60 text-white backdrop-blur-sm">
               {episodes} tập
             </span>
           )}

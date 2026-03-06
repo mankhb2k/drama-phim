@@ -44,13 +44,13 @@ export default async function MovieDetailPage({
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
-        <div className="relative mx-auto aspect-[2/3] w-full max-w-[280px] shrink-0 overflow-hidden rounded-xl bg-muted sm:mx-0 sm:max-w-[240px]">
+        <div className="relative mx-auto aspect-[2/3] w-full max-w-[17.5rem] shrink-0 overflow-hidden rounded-xl bg-muted sm:mx-0 sm:max-w-[15rem]">
           {movie.poster ? (
             <Image
               src={movie.poster}
               alt={movie.title}
               fill
-              sizes="280px"
+              sizes="17.5rem"
               className="object-cover"
               priority
               unoptimized

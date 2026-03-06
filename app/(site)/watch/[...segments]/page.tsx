@@ -8,7 +8,8 @@ import {
 } from "@/lib/watch-slug";
 import { EpisodeSwitcher } from "@/components/watch/EpisodeSwitcher";
 import { VideoJsPlayer } from "@/components/watch/VideoPlayer";
-import { WatchPageAd } from "@/components/watch/WatchPageAd";
+import { WatchPageAd } from "@/components/ads/WatchPageAd";
+import { StickyBanner } from "@/components/ads/StickyBannerAds";
 import { ArrowLeft } from "lucide-react";
 
 interface WatchCatchAllPageProps {
@@ -142,9 +143,9 @@ async function handleTreePath(parts: string[]) {
         </span>
       </div>
 
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex min-w-0 max-w-full flex-col items-center gap-2">
         <WatchPageAd />
-        <div className="relative mx-auto aspect-square w-full max-w-3xl overflow-hidden rounded-xl bg-black">
+        <div className="relative mx-auto aspect-square w-full min-w-0 max-w-full overflow-hidden rounded-xl bg-black sm:max-w-3xl">
         {canUseVideoJs && parsedPrimarySource ? (
           <VideoJsPlayer
             src={parsedPrimarySource.src}
@@ -208,6 +209,8 @@ async function handleTreePath(parts: string[]) {
           </ul>
         </div>
       )}
+
+      <StickyBanner />
     </div>
   );
 }

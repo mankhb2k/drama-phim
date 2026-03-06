@@ -17,7 +17,7 @@ export default async function DashboardGenresPage() {
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[300px] text-left text-sm">
+          <table className="w-full min-w-[18.75rem] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="px-4 py-3 font-medium text-foreground">Tên</th>

@@ -64,7 +64,7 @@ export function R2BucketManager({ onBucketsChange }: R2BucketManagerProps) {
       </p>
 
       <form onSubmit={handleCreate} className="mb-4 flex flex-wrap items-end gap-2">
-        <label className="flex flex-1 min-w-[160px] flex-col gap-1">
+        <label className="flex flex-1 min-w-40 flex-col gap-1">
           <span className="text-xs font-medium text-foreground">
             Tên bucket mới
           </span>

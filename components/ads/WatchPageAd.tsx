@@ -69,16 +69,26 @@ export function WatchPageAd() {
     };
   }, []);
 
+  /* Container dimensions in rem (468px≈29.25rem, 60px=3.75rem, 320px=20rem, 50px=3.125rem) */
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-full max-w-full flex-col items-center gap-2 overflow-hidden px-0">
       <div
         ref={container1Ref}
-        style={{ width: AD_CONFIGS[0].width, height: AD_CONFIGS[0].height }}
-        className="scale-75"
+        className="max-w-full overflow-hidden"
+        style={{
+          width: "29.25rem",
+          height: "3.75rem",
+          maxWidth: "100%",
+        }}
       />
       <div
         ref={container2Ref}
-        style={{ width: AD_CONFIGS[1].width, height: AD_CONFIGS[1].height }}
+        className="max-w-full overflow-hidden"
+        style={{
+          width: "20rem",
+          height: "3.125rem",
+          maxWidth: "100%",
+        }}
       />
     </div>
   );

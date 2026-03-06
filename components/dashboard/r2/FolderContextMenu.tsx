@@ -47,7 +47,7 @@ export function FolderContextMenu({
   return (
     <div
       ref={ref}
-      className="fixed z-[100] min-w-[180px] rounded-lg border border-border bg-card py-1 shadow-lg"
+      className="fixed z-[100] min-w-[11.25rem] rounded-lg border border-border bg-card py-1 shadow-lg"
       style={{ left: x, top: y }}
       role="menu"
     >
