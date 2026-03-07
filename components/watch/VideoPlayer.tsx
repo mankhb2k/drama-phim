@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
+  Film,
   Maximize,
   Minimize,
   Pause,
@@ -12,6 +13,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { useTheaterMode } from "@/components/watch/TheaterModeContext";
 import Artplayer from "artplayer";
 
 type ArtplayerInstance = InstanceType<typeof Artplayer>;
@@ -97,6 +99,7 @@ export function VideoJsPlayer({
   const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
   const hasSubtitle = Boolean(subtitleSrc);
   const isIOS = useMemo(() => isIOSDevice(), []);
+  const theaterModeCtx = useTheaterMode();
 
   const clearHideControlsTimer = () => {
     if (hideControlsTimerRef.current !== null) {
@@ -273,8 +276,7 @@ export function VideoJsPlayer({
       if (playerRef.current && !playerRef.current.isDestroy) return;
 
       Artplayer.NOTICE_TIME = 0;
-      const videoUrl =
-        src + (src.includes("#") ? "" : "#t=0.001");
+      const videoUrl = src + (src.includes("#") ? "" : "#t=0.001");
       const art = new Artplayer({
         container: el,
         url: videoUrl,
@@ -290,6 +292,7 @@ export function VideoJsPlayer({
         hotkey: true,
         moreVideoAttr: {
           preload: "auto",
+          playsInline: true,
         },
       });
 
@@ -385,9 +388,9 @@ export function VideoJsPlayer({
           };
 
           resolveSubSrc()
-            .then((trackSrc) => {
+            .then(async (trackSrc) => {
               if (art.isDestroy) return;
-              art.subtitle.url = trackSrc;
+              await art.subtitle.switch(trackSrc, { name: "CC" });
               art.subtitle.show = true;
               art.subtitle.style({
                 color: "#fff",
@@ -462,7 +465,7 @@ export function VideoJsPlayer({
             <button
               type="button"
               onClick={() => seekBy(-5)}
-              className="inline-flex size-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/75"
+              className="inline-flex size-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg transition-colors hover:bg-black/75"
               aria-label="Lùi 5 giây"
             >
               <span className="relative flex size-full items-center justify-center">
@@ -476,7 +479,7 @@ export function VideoJsPlayer({
             <button
               type="button"
               onClick={togglePlay}
-              className="inline-flex size-16 items-center justify-center rounded-full bg-black/60 text-white shadow-2xl backdrop-blur-sm transition-colors hover:bg-black/75"
+              className="inline-flex size-16 items-center justify-center rounded-full bg-black/60 text-white shadow-2xl transition-colors hover:bg-black/75"
               aria-label={isPlaying ? "Tạm dừng video" : "Phát video"}
             >
               {isPlaying ? (
@@ -493,7 +496,7 @@ export function VideoJsPlayer({
             <button
               type="button"
               onClick={() => seekBy(5)}
-              className="inline-flex size-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/75"
+              className="inline-flex size-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg transition-colors hover:bg-black/75"
               aria-label="Tiến 5 giây"
             >
               <span className="relative flex size-full items-center justify-center">
@@ -517,29 +520,36 @@ export function VideoJsPlayer({
                 : "pointer-events-none opacity-0"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 md:flex">
               <span className="ml-auto text-xs tabular-nums text-white/90">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
             </div>
 
             <div className="space-y-2">
-              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-600">
+              <div className="relative flex h-4 w-full items-center">
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-600">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-zinc-300"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={duration || 0}
+                    step={0.1}
+                    value={Math.min(currentTime, duration || 0)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      onSeek(Number(e.target.value))
+                    }
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Thanh thời lượng video"
+                  />
+                </div>
                 <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-zinc-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 0}
-                  step={0.1}
-                  value={Math.min(currentTime, duration || 0)}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    onSeek(Number(e.target.value))
-                  }
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  aria-label="Thanh thời lượng video"
+                  className="pointer-events-none absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-zinc-300 bg-white shadow-md"
+                  style={{ left: `${progressPercent}%` }}
+                  aria-hidden
                 />
               </div>
 
@@ -557,6 +567,9 @@ export function VideoJsPlayer({
                   )}
                 </button>
 
+                <span className="min-w-20 shrink-0 text-xs tabular-nums text-white/90 md:hidden">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
                 <input
                   type="range"
                   min={0}
@@ -566,14 +579,33 @@ export function VideoJsPlayer({
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     onVolumeChange(Number(e.target.value))
                   }
-                  className="h-1.5 w-26 cursor-pointer accent-zinc-300"
+                  className="hidden h-1.5 w-26 cursor-pointer accent-zinc-300 md:block"
                   aria-label="Âm lượng"
                 />
 
+                {theaterModeCtx && (
+                  <button
+                    type="button"
+                    onClick={theaterModeCtx.toggleTheaterMode}
+                    className={`md:hidden ml-auto inline-flex size-8 items-center justify-center rounded-full transition-colors hover:bg-white/25 ${
+                      theaterModeCtx.theaterMode
+                        ? "bg-white/25 text-amber-400"
+                        : "bg-white/15"
+                    }`}
+                    aria-label={
+                      theaterModeCtx.theaterMode
+                        ? "Thoát chế độ rạp chiếu phim"
+                        : "Chế độ rạp chiếu phim"
+                    }
+                    title="Chế độ rạp chiếu phim"
+                  >
+                    <Film className="size-4" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen((prev: boolean) => !prev)}
-                  className="relative ml-auto inline-flex size-8 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+                  className="relative inline-flex size-8 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
                   aria-label="Mở cài đặt phát video"
                 >
                   <Settings className="size-4" />

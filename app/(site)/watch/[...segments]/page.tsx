@@ -7,6 +7,7 @@ import {
   parseLegacyWatchSlug,
 } from "@/lib/watch-slug";
 import { EpisodeSwitcher } from "@/components/watch/EpisodeSwitcher";
+import { TheaterModeProvider } from "@/components/watch/TheaterModeContext";
 import { VideoJsPlayer } from "@/components/watch/VideoPlayer";
 import { WatchPageAd } from "@/components/ads/WatchPageAd";
 import { ArrowLeft } from "lucide-react";
@@ -144,7 +145,7 @@ async function handleTreePath(parts: string[]) {
 
       <div className="flex min-w-0 max-w-full flex-col items-center gap-2">
         <WatchPageAd />
-        <div className="relative mx-auto aspect-square w-full min-w-0 max-w-full overflow-hidden rounded-xl bg-black sm:max-w-3xl">
+        <TheaterModeProvider className="relative mx-auto aspect-square w-full min-w-0 max-w-full overflow-hidden rounded-xl bg-black sm:max-w-3xl">
           {canUseVideoJs && parsedPrimarySource ? (
             <VideoJsPlayer
               src={parsedPrimarySource.src}
@@ -172,7 +173,7 @@ async function handleTreePath(parts: string[]) {
               Chưa có link xem cho tập này.
             </div>
           )}
-        </div>
+        </TheaterModeProvider>
       </div>
 
       <EpisodeSwitcher
