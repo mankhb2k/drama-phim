@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { ProfilePopup } from "@/components/layout/ProfilePopup";
 
 // Genre list: used for visible tabs + overflow dropdown
 const genreLinks = [
@@ -39,7 +39,6 @@ const estimateMobileGenreWidth = (label: string): number => {
 
 export function Header() {
   // ----- Global header state -----
-  const user = useAuthStore((s) => s.user);
   const [genreMenuOpen, setGenreMenuOpen] = useState(false);
   const [visibleGenreCount, setVisibleGenreCount] = useState(10);
   const genreNavRefMobile = useRef<HTMLDivElement>(null);
@@ -99,9 +98,6 @@ export function Header() {
 
   const isGenreActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
-
-  const isProfileActive =
-    pathname === "/profile" || pathname.startsWith("/profile/");
 
   // ----- Reusable dropdown "more genres" (mobile + desktop) -----
   const dropdownContent = moreGenres.length > 0 && (
@@ -166,16 +162,20 @@ export function Header() {
                 alt="Drama Phim"
                 width={120}
                 height={20}
-                className="h-5 w-auto"
+                className="h-4.5 w-auto"
                 priority
               />
             </Link>
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <input
-                type="search"
-                placeholder="Tìm phim, diễn viên..."
-                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
-              />
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+              <div className="h-8.5 w-full overflow-hidden rounded-lg border border-input bg-background px-3 flex items-center">
+                <input
+                  type="search"
+                  placeholder="Tìm phim, diễn viên..."
+                  className="w-full origin-left scale-[0.75] bg-transparent outline-none"
+                  style={{ fontSize: "16px" }}
+                />
+              </div>
+
               <button
                 type="button"
                 className="shrink-0 rounded-lg bg-primary p-2 text-primary-foreground transition-colors hover:bg-primary/90"
@@ -209,16 +209,7 @@ export function Header() {
             {/* Mobile row 2-right: overflow dropdown + profile */}
             <div className="relative flex shrink-0 items-center gap-0.5">
               {dropdownContent}
-              <Link
-                href="/profile"
-                className={cn(
-                  "flex size-9 items-center justify-center rounded-full transition-colors hover:bg-accent hover:text-foreground",
-                  isProfileActive ? "text-foreground" : "text-muted-foreground",
-                )}
-                aria-label={user ? "Tài khoản" : "Đăng nhập / Đăng ký"}
-              >
-                <User className="size-5" />
-              </Link>
+              <ProfilePopup triggerClassName="size-9" iconSize="sm" />
             </div>
           </div>
         </div>
@@ -255,16 +246,10 @@ export function Header() {
                 <Search className="size-5" />
               </button>
             </div>
-            <Link
-              href="/profile"
-              className={cn(
-                "flex shrink-0 items-center justify-center rounded-full p-2 transition-colors hover:bg-accent hover:text-foreground",
-                isProfileActive ? "text-foreground" : "text-muted-foreground",
-              )}
-              aria-label={user ? "Tài khoản" : "Đăng nhập / Đăng ký"}
-            >
-              <User className="size-6" />
-            </Link>
+            <ProfilePopup
+              triggerClassName="shrink-0 p-2"
+              iconSize="md"
+            />
           </div>
           <div
             ref={genreNavRefDesktop}

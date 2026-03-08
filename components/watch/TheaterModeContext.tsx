@@ -29,7 +29,7 @@ export function TheaterModeProvider({
   );
 
   const containerClass = theaterMode
-    ? "fixed inset-0 z-50 size-full min-h-dvh w-screen max-w-none overflow-hidden rounded-none bg-black"
+    ? "theater-mode fixed inset-0 z-50 size-full min-h-dvh w-screen max-w-none overflow-hidden rounded-none bg-black"
     : className;
 
   return (
