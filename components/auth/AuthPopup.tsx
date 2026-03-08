@@ -204,7 +204,7 @@ export function AuthPopup() {
                           username: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
                       style={{ fontSize: "16px" }}
                       required
                     />
@@ -224,7 +224,7 @@ export function AuthPopup() {
                           password: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
                       style={{ fontSize: "16px" }}
                       required
                     />
@@ -259,7 +259,7 @@ export function AuthPopup() {
                           username: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
                       style={{ fontSize: "16px" }}
                       minLength={2}
                       required
@@ -280,7 +280,7 @@ export function AuthPopup() {
                           password: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
                       style={{ fontSize: "16px" }}
                       minLength={6}
                       required
@@ -298,7 +298,7 @@ export function AuthPopup() {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setRegisterForm((p) => ({ ...p, name: e.target.value }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
                       style={{ fontSize: "16px" }}
                     />
                   </div>
@@ -317,7 +317,7 @@ export function AuthPopup() {
                           email: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring sm:px-3 sm:py-2 sm:text-sm"
                       style={{ fontSize: "16px" }}
                     />
                   </div>

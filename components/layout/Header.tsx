@@ -167,7 +167,7 @@ export function Header() {
               />
             </Link>
             <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
-              <div className="h-8.5 w-full overflow-hidden rounded-lg border border-input bg-background px-3 flex items-center">
+              <div className="flex h-8.5 w-full items-center overflow-hidden rounded-lg border border-input bg-background px-3 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
                 <input
                   type="search"
                   placeholder="Tìm phim, diễn viên..."
@@ -236,7 +236,7 @@ export function Header() {
               <input
                 type="search"
                 placeholder="Tìm phim, diễn viên..."
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
               />
               <button
                 type="button"
@@ -246,10 +246,7 @@ export function Header() {
                 <Search className="size-5" />
               </button>
             </div>
-            <ProfilePopup
-              triggerClassName="shrink-0 p-2"
-              iconSize="md"
-            />
+            <ProfilePopup triggerClassName="shrink-0 p-2" iconSize="md" />
           </div>
           <div
             ref={genreNavRefDesktop}
