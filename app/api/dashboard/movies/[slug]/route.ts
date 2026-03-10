@@ -64,6 +64,7 @@ const updateMovieSchema = z.object({
   status: z.enum(["ONGOING", "COMPLETED"]).default("ONGOING"),
   genreIds: z.array(z.coerce.number().int().positive()).default([]),
   tagIds: z.array(z.coerce.number().int().positive()).default([]),
+  labelIds: z.array(z.coerce.number().int().positive()).default([]),
   episodes: z.array(episodeSchema).default([]),
 });
 
@@ -82,6 +83,7 @@ export async function GET(_request: NextRequest, context: Context) {
       include: {
         genres: { select: { id: true, slug: true, name: true } },
         tags: { select: { id: true, slug: true, name: true } },
+        labels: { select: { id: true, slug: true, name: true } },
         episodes: {
           orderBy: { episodeNumber: "asc" },
           include: { servers: { orderBy: { priority: "asc" } } },
@@ -170,6 +172,7 @@ export async function PATCH(request: NextRequest, context: Context) {
           audioType: data.audioType ?? "NONE",
           genres: { set: data.genreIds.map((id: number) => ({ id })) },
           tags: { set: data.tagIds.map((id: number) => ({ id })) },
+          labels: { set: data.labelIds.map((id: number) => ({ id })) },
           episodes:
             data.episodes.length > 0
               ? {
@@ -214,6 +217,7 @@ export async function PATCH(request: NextRequest, context: Context) {
       include: {
         genres: { select: { id: true, slug: true, name: true } },
         tags: { select: { id: true, slug: true, name: true } },
+        labels: { select: { id: true, slug: true, name: true } },
         episodes: {
           orderBy: { episodeNumber: "asc" },
           include: { servers: true },

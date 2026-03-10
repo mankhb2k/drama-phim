@@ -99,6 +99,7 @@ model Movie {
 
   genres        Genre[]
   tags          Tag[]
+  labels        Label[]
   episodes      Episode[]
   watchHistory  WatchHistory[]
   favorites     Favorite[]
@@ -167,6 +168,20 @@ model Tag {
   slug  String @unique // tag
   name  String
   order Int    @default(0)
+
+  movies Movie[]
+
+  @@index([slug])
+}
+
+/** Nhãn hiển thị trên đầu thẻ phim: Hot, Phim mới, Đang chiếu, v.v. */
+model Label {
+  id             Int     @id @default(autoincrement())
+  slug           String  @unique
+  name           String
+  order          Int     @default(0)
+  textColor      String? // Màu chữ (hex hoặc CSS), VD: #fff
+  backgroundColor String? // Màu nền (hex hoặc CSS), VD: #e11d48
 
   movies Movie[]
 

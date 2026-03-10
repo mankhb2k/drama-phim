@@ -13,6 +13,7 @@ type MovieItem = {
   year: number | null;
   status: "ONGOING" | "COMPLETED";
   episodes: number;
+  labels?: Array<{ name: string; textColor?: string | null; backgroundColor?: string | null }>;
 };
 
 type ApiResponse = {
@@ -75,7 +76,7 @@ export function TongHopSection() {
           <p className="text-sm text-muted-foreground">Chưa có phim nào.</p>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:gap-4 scrollbar-hide">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {items.map((movie: MovieItem) => (
                 <MovieCard
                   key={movie.slug}
@@ -85,6 +86,8 @@ export function TongHopSection() {
                   year={movie.year}
                   episodes={movie.episodes}
                   status={movie.status}
+                  labels={movie.labels}
+                  className="min-w-0 w-full"
                 />
               ))}
             </div>

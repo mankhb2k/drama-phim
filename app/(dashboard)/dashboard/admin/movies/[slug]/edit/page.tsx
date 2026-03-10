@@ -54,6 +54,7 @@ type MovieResponse = {
   audioType?: "NONE" | "SUB" | "DUBBED";
   genres: Genre[];
   tags: Tag[];
+  labels: Array<{ id: number; slug: string; name: string }>;
   episodes: Array<{
     id: number;
     episodeNumber: number;
@@ -88,6 +89,9 @@ export default function EditMoviePage() {
 
   const [genres, setGenres] = useState<Genre[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [labels, setLabels] = useState<
+    Array<{ id: number; slug: string; name: string }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -108,6 +112,7 @@ export default function EditMoviePage() {
   const [audioType, setAudioType] = useState<"NONE" | "SUB" | "DUBBED">("NONE");
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
+  const [labelIds, setLabelIds] = useState<number[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
   const [r2MoviePickerOpen, setR2MoviePickerOpen] = useState(false);
   const [r2SubPickerOpen, setR2SubPickerOpen] = useState(false);
@@ -115,10 +120,11 @@ export default function EditMoviePage() {
   const fetchMovieAndOptions = useCallback(async () => {
     if (!slug) return;
     try {
-      const [movieRes, genresRes, tagsRes] = await Promise.all([
+      const [movieRes, genresRes, tagsRes, labelsRes] = await Promise.all([
         fetch(`/api/dashboard/movies/${encodeURIComponent(slug)}`),
         fetch("/api/dashboard/genres"),
         fetch("/api/dashboard/tags"),
+        fetch("/api/dashboard/labels"),
       ]);
       if (!movieRes.ok) {
         setMessage({ type: "error", text: "Không tìm thấy phim." });
@@ -128,6 +134,7 @@ export default function EditMoviePage() {
       const movie: MovieResponse = await movieRes.json();
       if (genresRes.ok) setGenres(await genresRes.json());
       if (tagsRes.ok) setTags(await tagsRes.json());
+      if (labelsRes.ok) setLabels(await labelsRes.json());
 
       setTitle(movie.title);
       setSlugInput(movie.slug);
@@ -141,6 +148,7 @@ export default function EditMoviePage() {
       setAudioType(movie.audioType ?? "NONE");
       setGenreIds(movie.genres.map((g: Genre) => g.id));
       setTagIds(movie.tags.map((t: Tag) => t.id));
+      setLabelIds((movie.labels ?? []).map((l: { id: number }) => l.id));
       setEpisodes(
         movie.episodes.map((ep: (typeof movie.episodes)[number]) => ({
           id: genId(),
@@ -244,7 +252,10 @@ export default function EditMoviePage() {
     setEpisodes((prev) =>
       prev.map((e: EpisodeRow) =>
         e.id === episodeId
-          ? { ...e, servers: e.servers.filter((s: ServerRow) => s.id !== serverId) }
+          ? {
+              ...e,
+              servers: e.servers.filter((s: ServerRow) => s.id !== serverId),
+            }
           : e,
       ),
     );
@@ -273,7 +284,9 @@ export default function EditMoviePage() {
           (i: R2ApplyItem) => i.episodeNumber === ep.episodeNumber,
         );
         if (!item) return ep;
-        const existingR2 = ep.servers.find((s: ServerRow) => s.storageProvider === "R2");
+        const existingR2 = ep.servers.find(
+          (s: ServerRow) => s.storageProvider === "R2",
+        );
         if (existingR2) {
           return {
             ...ep,
@@ -370,6 +383,7 @@ export default function EditMoviePage() {
         status,
         genreIds,
         tagIds,
+        labelIds,
         episodes: episodes.map((ep: EpisodeRow) => ({
           episodeNumber: ep.episodeNumber,
           name: ep.name.trim() || undefined,
@@ -692,6 +706,36 @@ export default function EditMoviePage() {
               </div>
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2">
+              <span className="text-sm font-medium text-foreground">Nhãn</span>
+              <div className="flex flex-wrap gap-2">
+                {labels.map((l: { id: number; slug: string; name: string }) => (
+                  <label
+                    key={l.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={labelIds.includes(l.id)}
+                      onChange={() =>
+                        setLabelIds((prev) =>
+                          prev.includes(l.id)
+                            ? prev.filter((id: number) => id !== l.id)
+                            : [...prev, l.id],
+                        )
+                      }
+                      className="size-4 rounded border-input"
+                    />
+                    {l.name}
+                  </label>
+                ))}
+                {labels.length === 0 && (
+                  <span className="text-sm text-muted-foreground">
+                    Chưa có nhãn.
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:col-span-2">
               <span className="text-sm font-medium text-foreground">Tag</span>
               <div className="flex flex-wrap gap-2">
                 {tags.map((t: Tag) => (
@@ -927,13 +971,17 @@ export default function EditMoviePage() {
       <R2SubtitleFolderPickerModal
         open={r2SubPickerOpen}
         onClose={() => setR2SubPickerOpen(false)}
-        episodes={episodes.map((ep: EpisodeRow) => ({ episodeNumber: ep.episodeNumber }))}
+        episodes={episodes.map((ep: EpisodeRow) => ({
+          episodeNumber: ep.episodeNumber,
+        }))}
         onApply={handleR2SubApply}
       />
       <R2MovieFolderPickerModal
         open={r2MoviePickerOpen}
         onClose={() => setR2MoviePickerOpen(false)}
-        episodes={episodes.map((ep: EpisodeRow) => ({ episodeNumber: ep.episodeNumber }))}
+        episodes={episodes.map((ep: EpisodeRow) => ({
+          episodeNumber: ep.episodeNumber,
+        }))}
         onApply={handleR2Apply}
       />
     </div>

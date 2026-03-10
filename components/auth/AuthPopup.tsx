@@ -197,6 +197,8 @@ export function AuthPopup() {
                   <div className="max-sm:origin-top-left max-sm:scale-y-[0.875] sm:scale-100">
                     <input
                       type="text"
+                      name="username"
+                      autoComplete="username"
                       value={loginForm.username}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setLoginForm((p) => ({
@@ -217,6 +219,8 @@ export function AuthPopup() {
                   <div className="max-sm:origin-top-left max-sm:scale-y-[0.875] sm:scale-100">
                     <input
                       type="password"
+                      name="password"
+                      autoComplete="current-password"
                       value={loginForm.password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setLoginForm((p) => ({
@@ -252,6 +256,8 @@ export function AuthPopup() {
                   <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
                     <input
                       type="text"
+                      name="username"
+                      autoComplete="username"
                       value={registerForm.username}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setRegisterForm((p) => ({
@@ -273,6 +279,8 @@ export function AuthPopup() {
                   <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
                     <input
                       type="password"
+                      name="new-password"
+                      autoComplete="new-password"
                       value={registerForm.password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setRegisterForm((p) => ({
@@ -294,6 +302,8 @@ export function AuthPopup() {
                   <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
                     <input
                       type="text"
+                      name="name"
+                      autoComplete="name"
                       value={registerForm.name}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setRegisterForm((p) => ({ ...p, name: e.target.value }))
@@ -310,6 +320,8 @@ export function AuthPopup() {
                   <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
                     <input
                       type="email"
+                      name="email"
+                      autoComplete="email"
                       value={registerForm.email}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setRegisterForm((p) => ({

@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
           status: true,
           views: true,
           _count: { select: { episodes: true } },
+          labels: { select: { name: true, textColor: true, backgroundColor: true } },
         },
       }),
       prisma.movie.count({ where }),
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     const items = movies.map((m: (typeof movies)[number]) => ({
       ...m,
       episodes: m._count.episodes,
+      labels: m.labels,
       _count: undefined,
     }));
 

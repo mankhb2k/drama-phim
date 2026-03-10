@@ -15,6 +15,7 @@ import {
 
 type Genre = { id: number; slug: string; name: string };
 type Tag = { id: number; slug: string; name: string };
+type Label = { id: number; slug: string; name: string };
 
 type ServerRow = {
   id: string;
@@ -46,6 +47,7 @@ function genId() {
 export default function DashboardNewMoviePage() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{
@@ -66,18 +68,21 @@ export default function DashboardNewMoviePage() {
   const [audioType, setAudioType] = useState<"NONE" | "SUB" | "DUBBED">("NONE");
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
+  const [labelIds, setLabelIds] = useState<number[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
   const [r2MoviePickerOpen, setR2MoviePickerOpen] = useState(false);
   const [r2SubPickerOpen, setR2SubPickerOpen] = useState(false);
 
   const fetchOptions = useCallback(async () => {
     try {
-      const [genresRes, tagsRes] = await Promise.all([
+      const [genresRes, tagsRes, labelsRes] = await Promise.all([
         fetch("/api/dashboard/genres"),
         fetch("/api/dashboard/tags"),
+        fetch("/api/dashboard/labels"),
       ]);
       if (genresRes.ok) setGenres(await genresRes.json());
       if (tagsRes.ok) setTags(await tagsRes.json());
+      if (labelsRes.ok) setLabels(await labelsRes.json());
     } finally {
       setLoading(false);
     }
@@ -96,6 +101,12 @@ export default function DashboardNewMoviePage() {
   const toggleTag = (id: number) => {
     setTagIds((prev) =>
       prev.includes(id) ? prev.filter((t: number) => t !== id) : [...prev, id],
+    );
+  };
+
+  const toggleLabel = (id: number) => {
+    setLabelIds((prev) =>
+      prev.includes(id) ? prev.filter((l: number) => l !== id) : [...prev, id],
     );
   };
 
@@ -163,7 +174,10 @@ export default function DashboardNewMoviePage() {
     setEpisodes((prev) =>
       prev.map((e: EpisodeRow) =>
         e.id === episodeId
-          ? { ...e, servers: e.servers.filter((s: ServerRow) => s.id !== serverId) }
+          ? {
+              ...e,
+              servers: e.servers.filter((s: ServerRow) => s.id !== serverId),
+            }
           : e,
       ),
     );
@@ -193,7 +207,9 @@ export default function DashboardNewMoviePage() {
           (i: R2ApplyItem) => i.episodeNumber === ep.episodeNumber,
         );
         if (!item) return ep;
-        const existingR2 = ep.servers.find((s: ServerRow) => s.storageProvider === "R2");
+        const existingR2 = ep.servers.find(
+          (s: ServerRow) => s.storageProvider === "R2",
+        );
         if (existingR2) {
           return {
             ...ep,
@@ -289,6 +305,7 @@ export default function DashboardNewMoviePage() {
         status,
         genreIds,
         tagIds,
+        labelIds,
         episodes: episodes.map((ep: EpisodeRow) => ({
           episodeNumber: ep.episodeNumber,
           name: ep.name.trim() || undefined,
@@ -614,6 +631,30 @@ export default function DashboardNewMoviePage() {
               </div>
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2">
+              <span className="text-sm font-medium text-foreground">Nhãn</span>
+              <div className="flex flex-wrap gap-2">
+                {labels.map((l: Label) => (
+                  <label
+                    key={l.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={labelIds.includes(l.id)}
+                      onChange={() => toggleLabel(l.id)}
+                      className="size-4 rounded border-input"
+                    />
+                    {l.name}
+                  </label>
+                ))}
+                {labels.length === 0 && (
+                  <span className="text-sm text-muted-foreground">
+                    Chưa có nhãn.
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:col-span-2">
               <span className="text-sm font-medium text-foreground">Tag</span>
               <div className="flex flex-wrap gap-2">
                 {tags.map((t: Tag) => (
@@ -845,13 +886,17 @@ export default function DashboardNewMoviePage() {
       <R2MovieFolderPickerModal
         open={r2MoviePickerOpen}
         onClose={() => setR2MoviePickerOpen(false)}
-        episodes={episodes.map((ep: EpisodeRow) => ({ episodeNumber: ep.episodeNumber }))}
+        episodes={episodes.map((ep: EpisodeRow) => ({
+          episodeNumber: ep.episodeNumber,
+        }))}
         onApply={handleR2Apply}
       />
       <R2SubtitleFolderPickerModal
         open={r2SubPickerOpen}
         onClose={() => setR2SubPickerOpen(false)}
-        episodes={episodes.map((ep: EpisodeRow) => ({ episodeNumber: ep.episodeNumber }))}
+        episodes={episodes.map((ep: EpisodeRow) => ({
+          episodeNumber: ep.episodeNumber,
+        }))}
         onApply={handleR2SubApply}
       />
     </div>

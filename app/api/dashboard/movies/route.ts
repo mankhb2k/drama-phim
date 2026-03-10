@@ -62,6 +62,7 @@ const createMovieSchema = z.object({
   status: z.enum(["ONGOING", "COMPLETED"]).default("ONGOING"),
   genreIds: z.array(z.coerce.number().int().positive()).default([]),
   tagIds: z.array(z.coerce.number().int().positive()).default([]),
+  labelIds: z.array(z.coerce.number().int().positive()).default([]),
   episodes: z.array(episodeSchema).default([]),
 });
 
@@ -113,6 +114,9 @@ export async function POST(request: NextRequest) {
         tags: data.tagIds.length
           ? { connect: data.tagIds.map((id: number) => ({ id })) }
           : undefined,
+        labels: data.labelIds.length
+          ? { connect: data.labelIds.map((id: number) => ({ id })) }
+          : undefined,
         episodes:
           data.episodes.length > 0
             ? {
@@ -152,6 +156,7 @@ export async function POST(request: NextRequest) {
       include: {
         genres: { select: { id: true, slug: true, name: true } },
         tags: { select: { id: true, slug: true, name: true } },
+        labels: { select: { id: true, slug: true, name: true } },
         episodes: {
           include: {
             servers: true,

@@ -15,7 +15,10 @@ export default async function GenrePage({ params }: GenrePageProps) {
     include: {
       movies: {
         orderBy: { createdAt: "desc" },
-        include: { _count: { select: { episodes: true } } },
+        include: {
+          _count: { select: { episodes: true } },
+          labels: { select: { name: true, textColor: true, backgroundColor: true } },
+        },
       },
     },
   });
@@ -46,6 +49,7 @@ export default async function GenrePage({ params }: GenrePageProps) {
                 year={movie.year}
                 episodes={movie._count.episodes}
                 status={movie.status}
+                labels={movie.labels}
               />
             </li>
           ))}

@@ -3,6 +3,12 @@ import Link from "next/link";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export interface MovieCardLabel {
+  name: string;
+  textColor?: string | null;
+  backgroundColor?: string | null;
+}
+
 export interface MovieCardProps {
   slug: string;
   title: string;
@@ -10,6 +16,7 @@ export interface MovieCardProps {
   year?: number | null;
   episodes?: number;
   status?: "ONGOING" | "COMPLETED";
+  labels?: MovieCardLabel[];
   className?: string;
   variant?: "default" | "compact";
 }
@@ -24,6 +31,7 @@ export function MovieCard({
   year,
   episodes,
   status,
+  labels,
   className,
   variant = "default",
 }: MovieCardProps) {
@@ -69,13 +77,20 @@ export function MovieCard({
           </span>
         </div>
 
-        {/* Badges */}
+        {/* Badges: tối đa 2 label + số tập */}
         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
-          {status === "ONGOING" && (
-            <span className="rounded px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide bg-amber-500/90 text-white">
-              Đang chiếu
+          {labels?.slice(0, 2).map((l: MovieCardLabel) => (
+            <span
+              key={l.name}
+              className="rounded px-1.5 py-0.5 text-[0.625rem] font-semibold"
+              style={{
+                color: l.textColor ?? "#fff",
+                backgroundColor: l.backgroundColor ?? "rgba(0,0,0,0.6)",
+              }}
+            >
+              {l.name}
             </span>
-          )}
+          ))}
           {episodes !== undefined && episodes > 0 && (
             <span className="rounded px-1.5 py-0.5 text-[0.625rem] font-medium bg-black/60 text-white backdrop-blur-sm">
               {episodes} tập

@@ -199,7 +199,7 @@ export function Header() {
                     "shrink-0 whitespace-nowrap px-2.5 py-2 text-sm font-medium transition-colors",
                     isGenreActive(link.href)
                       ? "text-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {link.label}
@@ -263,7 +263,7 @@ export function Header() {
                     "shrink-0 whitespace-nowrap px-2.5 py-2 text-sm font-medium transition-colors",
                     isGenreActive(link.href)
                       ? "text-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {link.label}

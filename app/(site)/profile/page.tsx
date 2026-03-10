@@ -518,8 +518,10 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
+                    name="username"
+                    autoComplete="username"
                     value={loginForm.username}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setLoginForm((p) => ({ ...p, username: e.target.value }))
                     }
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -532,8 +534,10 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="password"
+                    name="password"
+                    autoComplete="current-password"
                     value={loginForm.password}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setLoginForm((p) => ({ ...p, password: e.target.value }))
                     }
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -553,8 +557,10 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
+                    name="username"
+                    autoComplete="username"
                     value={registerForm.username}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, username: e.target.value }))
                     }
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -568,8 +574,10 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="password"
+                    name="new-password"
+                    autoComplete="new-password"
                     value={registerForm.password}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, password: e.target.value }))
                     }
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -583,8 +591,10 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
+                    name="name"
+                    autoComplete="name"
                     value={registerForm.name}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, name: e.target.value }))
                     }
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -596,8 +606,10 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="email"
+                    name="email"
+                    autoComplete="email"
                     value={registerForm.email}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, email: e.target.value }))
                     }
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"

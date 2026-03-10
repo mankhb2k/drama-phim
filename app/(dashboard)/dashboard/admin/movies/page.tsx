@@ -9,6 +9,7 @@ export default async function DashboardMoviesPage() {
     include: {
       _count: { select: { episodes: true } },
       genres: { select: { name: true } },
+      labels: { select: { name: true } },
     },
   });
 
@@ -44,6 +45,9 @@ export default async function DashboardMoviesPage() {
                 <th className="px-4 py-3 font-medium text-foreground">
                   Trạng thái
                 </th>
+                <th className="px-4 py-3 font-medium text-foreground">
+                  Nhãn
+                </th>
                 <th className="px-4 py-3 font-medium text-foreground">Tập</th>
                 <th className="px-4 py-3 font-medium text-foreground">
                   Thể loại
@@ -57,7 +61,7 @@ export default async function DashboardMoviesPage() {
               {movies.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Chưa có phim nào.
@@ -87,6 +91,9 @@ export default async function DashboardMoviesPage() {
                           ? "Đang chiếu"
                           : "Hoàn thành"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {movie.labels.map((l: (typeof movie.labels)[number]) => l.name).join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {movie._count.episodes}

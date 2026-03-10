@@ -128,7 +128,7 @@ function MovieRow({
   variant?: "default" | "compact";
 }) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:gap-4 scrollbar-hide">
+    <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:gap-4 scrollbar-hide">
       {movies.map((movie: (typeof movies)[number]) => (
         <MovieCard
           key={movie.slug}
@@ -138,6 +138,7 @@ function MovieRow({
           episodes={movie.episodes}
           status={movie.status}
           variant={variant}
+          className="w-[8rem] min-w-[8rem] sm:min-w-0 sm:w-40"
         />
       ))}
     </div>
