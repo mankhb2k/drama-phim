@@ -341,9 +341,20 @@ export function R2BucketViewClient({
           method: "POST",
           body: formData,
         });
-        const data = await res.json();
+        let data: { error?: string };
+        try {
+          const text = await res.text();
+          data = text ? (JSON.parse(text) as { error?: string }) : {};
+        } catch {
+          data = {};
+        }
         if (!res.ok) {
-          throw new Error(data.error ?? "Upload thất bại");
+          const msg =
+            data.error ??
+            (res.status === 413
+              ? "File hoặc tổng dung lượng quá lớn. Thử upload ít file hơn hoặc file nhỏ hơn."
+              : `Upload thất bại (${res.status})`);
+          throw new Error(msg);
         }
         await loadObjects(prefixFromUrl);
       } catch (err) {
