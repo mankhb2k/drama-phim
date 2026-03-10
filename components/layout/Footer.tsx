@@ -39,11 +39,11 @@ export function Footer() {
             <Link
               href="/"
               className="inline-flex items-center"
-              aria-label="Drama Phim - Trang chủ"
+              aria-label="DramaHD - Trang chủ"
             >
               <Image
                 src="/dramahd-logo.svg"
-                alt="Drama Phim"
+                alt="DramaHD"
                 width={140}
                 height={24}
                 className="h-6 w-auto"
@@ -137,7 +137,7 @@ export function Footer() {
             className="text-center text-sm text-muted-foreground sm:text-left"
             suppressHydrationWarning
           >
-            © {currentYear} Drama Phim. All rights reserved.
+            © {currentYear} DramaHD. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             {footerLinks.phapLy.map(

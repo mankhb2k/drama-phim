@@ -1,10 +1,29 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { MovieCard } from "@/components/movie/MovieCard";
+import { getCanonicalUrl } from "@/lib/site-url";
 
 interface GenrePageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: GenrePageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const genre = await prisma.genre.findUnique({
+    where: { slug },
+    select: { name: true },
+  });
+  if (!genre) return {};
+  const canonical = getCanonicalUrl(`/the-loai/${slug}`);
+  return {
+    title: `DramaHD - Thể loại: ${genre.name}`,
+    description: `Xem phim thể loại ${genre.name} online miễn phí tại DramaHD.`,
+    alternates: canonical ? { canonical } : undefined,
+  };
 }
 
 export default async function GenrePage({ params }: GenrePageProps) {

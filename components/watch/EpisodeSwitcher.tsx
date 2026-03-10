@@ -10,7 +10,11 @@ export interface EpisodeSwitcherProps {
   movieTitle: string;
   currentEpisodeNumber: number;
   channel?: string;
-  episodes: Array<{ episodeNumber: number; name: string; episodeSlug?: string }>;
+  episodes: Array<{
+    episodeNumber: number;
+    name: string;
+    episodeSlug?: string;
+  }>;
   className?: string;
 }
 
@@ -23,7 +27,7 @@ export function EpisodeSwitcher({
   className,
 }: EpisodeSwitcherProps) {
   const currentIndex = episodes.findIndex(
-    (ep) => ep.episodeNumber === currentEpisodeNumber
+    (ep) => ep.episodeNumber === currentEpisodeNumber,
   );
   const prevEp = currentIndex > 0 ? episodes[currentIndex - 1] : null;
   const nextEp =
@@ -87,7 +91,7 @@ export function EpisodeSwitcher({
 
       <div className="rounded-xl border border-border bg-muted/30 p-4">
         <p className="mb-3 text-sm font-medium text-muted-foreground">
-          {movieTitle} — Chọn tập
+          Chọn tập
         </p>
         <div className="grid max-h-[17.5rem] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
           {episodes.map((ep: (typeof episodes)[number]) => {
@@ -105,7 +109,7 @@ export function EpisodeSwitcher({
                   "rounded-lg border px-3 py-2.5 text-center text-sm font-medium transition-colors",
                   isActive
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-foreground hover:bg-accent"
+                    : "border-border bg-background text-foreground hover:bg-accent",
                 )}
               >
                 {ep.episodeNumber}

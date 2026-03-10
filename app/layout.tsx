@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Drama Phim - Xem phim online miễn phí",
+  title: "DramaHD - Xem phim online miễn phí",
   description:
     "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.",
   other: {

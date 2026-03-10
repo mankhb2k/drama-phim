@@ -155,11 +155,11 @@ export function Header() {
             <Link
               href="/"
               className="flex shrink-0 items-center"
-              aria-label="Drama Phim - Trang chủ"
+              aria-label="DramaHD - Trang chủ"
             >
               <Image
                 src="/dramahd-logo.svg"
-                alt="Drama Phim"
+                alt="DramaHD"
                 width={120}
                 height={20}
                 className="h-4.5 w-auto"
@@ -221,11 +221,11 @@ export function Header() {
             <Link
               href="/"
               className="flex shrink-0 items-center"
-              aria-label="Drama Phim - Trang chủ"
+              aria-label="DramaHD - Trang chủ"
             >
               <Image
                 src="/dramahd-logo.svg"
-                alt="Drama Phim"
+                alt="DramaHD"
                 width={140}
                 height={24}
                 className="h-6 w-auto"

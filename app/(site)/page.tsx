@@ -1,5 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
+import { getCanonicalUrl } from "@/lib/site-url";
+
+export const metadata: Metadata = {
+  title: "DramaHD - Trang chủ",
+  description:
+    "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.",
+  alternates: getCanonicalUrl("/")
+    ? { canonical: getCanonicalUrl("/") }
+    : undefined,
+};
 import { MovieCard } from "@/components/movie/MovieCard";
 import { MovieCardHero } from "@/components/movie/MovieCardHero";
 import { TongHopSection } from "@/components/home/TongHopSection";
@@ -166,14 +177,14 @@ export default function HomePage() {
               Đang hot
             </span>
           }
-          href="/phim-bo?sort=trending"
+          href="/phim-hot"
         />
         <div className="mt-4">
           <MovieRow movies={trendingMovies} />
         </div>
       </section>
       <section>
-        <SectionHeader title="Mới cập nhật" href="/phim-bo?sort=latest" />
+        <SectionHeader title="Mới cập nhật" href="/phim-moi" />
         <div className="mt-4">
           <MovieRow movies={newUpdates} />
         </div>

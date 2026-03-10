@@ -16,9 +16,11 @@ export async function GET(request: NextRequest) {
         : {};
 
     const orderBy =
-      orderByParam === "createdAt"
-        ? { createdAt: "desc" as const }
-        : { updatedAt: "desc" as const };
+      orderByParam === "views"
+        ? { views: "desc" as const }
+        : orderByParam === "createdAt"
+          ? { createdAt: "desc" as const }
+          : { updatedAt: "desc" as const };
 
     const [movies, total] = await Promise.all([
       prisma.movie.findMany({

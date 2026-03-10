@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,7 @@ import {
   parseEpisodeSlug,
   parseLegacyWatchSlug,
 } from "@/lib/watch-slug";
+import { getCanonicalUrl } from "@/lib/site-url";
 import { EpisodeSwitcher } from "@/components/watch/EpisodeSwitcher";
 import { TheaterModeProvider } from "@/components/watch/TheaterModeContext";
 import { VideoJsPlayer } from "@/components/watch/VideoPlayer";
@@ -14,6 +16,26 @@ import { ArrowLeft } from "lucide-react";
 
 interface WatchCatchAllPageProps {
   params: Promise<{ segments: string[] }>;
+}
+
+export async function generateMetadata({
+  params,
+}: WatchCatchAllPageProps): Promise<Metadata> {
+  const { segments } = await params;
+  if (!Array.isArray(segments) || segments.length !== 3) return {};
+  const [channel, movieSlug] = segments;
+  const movie = await prisma.movie.findFirst({
+    where: { slug: movieSlug, channel: channel ?? undefined },
+    select: { title: true },
+  });
+  if (!movie) return {};
+  const path = `/watch/${segments.join("/")}`;
+  const canonical = getCanonicalUrl(path);
+  return {
+    title: `DramaHD - ${movie.title}`,
+    description: `Xem ${movie.title} online miễn phí tại DramaHD.`,
+    alternates: canonical ? { canonical } : undefined,
+  };
 }
 
 type ParsedVideoSource = {

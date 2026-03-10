@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -7,12 +8,35 @@ import { buildWatchHref } from "@/lib/watch-slug";
 import { cn } from "@/lib/utils";
 import { FavoriteButton } from "@/components/movie/FavoriteButton";
 import { MovieDescription } from "@/components/movie/MovieDescription";
+import { getCanonicalUrl } from "@/lib/site-url";
 
 const placeholderPoster =
   "linear-gradient(135deg, oklch(0.45 0.02 264) 0%, oklch(0.25 0.03 280) 100%)";
 
+const DEFAULT_DESCRIPTION =
+  "Xem phim online miễn phí, chất lượng cao tại DramaHD.";
+
 interface MovieDetailPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: MovieDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const movie = await prisma.movie.findUnique({
+    where: { slug },
+    select: { title: true, description: true },
+  });
+  if (!movie) return {};
+  const description =
+    movie.description?.trim().slice(0, 160) || DEFAULT_DESCRIPTION;
+  const canonical = getCanonicalUrl(`/movies/${slug}`);
+  return {
+    title: `DramaHD - ${movie.title}`,
+    description,
+    alternates: canonical ? { canonical } : undefined,
+  };
 }
 
 export default async function MovieDetailPage({
