@@ -1,15 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { getCanonicalUrl } from "@/lib/site-url";
+import { getBaseUrl, getCanonicalUrl } from "@/lib/site-url";
+
+const SITE_DESCRIPTION =
+  "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.";
+const baseUrl = getBaseUrl() || "https://dramahd.net";
+const homeUrl = getCanonicalUrl("/") ?? `${baseUrl.replace(/\/$/, "")}`;
+const ogImageUrl = `${baseUrl.replace(/\/$/, "")}/drama-logo.png`;
 
 export const metadata: Metadata = {
   title: "DramaHD - Trang chủ",
-  description:
-    "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.",
-  alternates: getCanonicalUrl("/")
-    ? { canonical: getCanonicalUrl("/") }
-    : undefined,
+  description: SITE_DESCRIPTION,
+  alternates: getCanonicalUrl("/") ? { canonical: getCanonicalUrl("/") } : undefined,
+  openGraph: {
+    title: "DramaHD - Trang chủ",
+    description: SITE_DESCRIPTION,
+    url: homeUrl,
+    siteName: "DramaHD",
+    type: "website",
+    images: [{ url: ogImageUrl, alt: "DramaHD" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DramaHD - Trang chủ",
+    description: SITE_DESCRIPTION,
+  },
 };
 import { MovieCard } from "@/components/movie/MovieCard";
 import { MovieCardHero } from "@/components/movie/MovieCardHero";
@@ -156,9 +172,22 @@ function MovieRow({
   );
 }
 
+const homePageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "DramaHD",
+  url: baseUrl.replace(/\/$/, ""),
+  description: SITE_DESCRIPTION,
+};
+
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-10 sm:gap-12">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homePageJsonLd) }}
+      />
+      <div className="flex flex-col gap-10 sm:gap-12">
       <section className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8">
         <MovieCardHero
           slug={featuredMovie.slug}
@@ -202,5 +231,6 @@ export default function HomePage() {
         </Button>
       </section>
     </div>
+    </>
   );
 }

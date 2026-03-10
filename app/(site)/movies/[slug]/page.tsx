@@ -8,7 +8,7 @@ import { buildWatchHref } from "@/lib/watch-slug";
 import { cn } from "@/lib/utils";
 import { FavoriteButton } from "@/components/movie/FavoriteButton";
 import { MovieDescription } from "@/components/movie/MovieDescription";
-import { getCanonicalUrl } from "@/lib/site-url";
+import { getBaseUrl, getCanonicalUrl } from "@/lib/site-url";
 
 const placeholderPoster =
   "linear-gradient(135deg, oklch(0.45 0.02 264) 0%, oklch(0.25 0.03 280) 100%)";
@@ -20,22 +20,47 @@ interface MovieDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+function toAbsoluteImageUrl(poster: string | null, baseUrl: string): string | undefined {
+  if (!poster?.trim()) return undefined;
+  if (poster.startsWith("http://") || poster.startsWith("https://")) return poster;
+  const base = baseUrl.replace(/\/$/, "");
+  return poster.startsWith("/") ? `${base}${poster}` : `${base}/${poster}`;
+}
+
 export async function generateMetadata({
   params,
 }: MovieDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   const movie = await prisma.movie.findUnique({
     where: { slug },
-    select: { title: true, description: true },
+    select: { title: true, description: true, poster: true },
   });
   if (!movie) return {};
   const description =
     movie.description?.trim().slice(0, 160) || DEFAULT_DESCRIPTION;
   const canonical = getCanonicalUrl(`/movies/${slug}`);
+  const baseUrl = getBaseUrl() || "https://dramahd.net";
+  const ogImage = toAbsoluteImageUrl(movie.poster, baseUrl);
+  const pageUrl = canonical ?? `${baseUrl.replace(/\/$/, "")}/movies/${slug}`;
+
   return {
     title: `DramaHD - ${movie.title}`,
     description,
     alternates: canonical ? { canonical } : undefined,
+    openGraph: {
+      title: `DramaHD - ${movie.title}`,
+      description,
+      url: pageUrl,
+      siteName: "DramaHD",
+      type: "website",
+      ...(ogImage && { images: [{ url: ogImage, alt: movie.title }] }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `DramaHD - ${movie.title}`,
+      description,
+      ...(ogImage && { images: [ogImage] }),
+    },
   };
 }
 
@@ -65,8 +90,27 @@ export default async function MovieDetailPage({
       )
     : "#";
 
+  const baseUrl = getBaseUrl() || "https://dramahd.net";
+  const pageUrl = getCanonicalUrl(`/movies/${slug}`) ?? `${baseUrl.replace(/\/$/, "")}/movies/${slug}`;
+  const posterUrl = toAbsoluteImageUrl(movie.poster, baseUrl);
+  const movieJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TVSeries",
+    name: movie.title,
+    ...(movie.originalTitle && { alternateName: movie.originalTitle }),
+    ...(movie.description && { description: movie.description }),
+    ...(posterUrl && { image: posterUrl }),
+    url: pageUrl,
+    ...(movie.year && { datePublished: String(movie.year) }),
+    ...(movie.episodes.length > 0 && { numberOfEpisodes: movie.episodes.length }),
+  };
+
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(movieJsonLd) }}
+      />
       <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
         <div className="relative mx-auto aspect-[2/3] w-full max-w-[17.5rem] shrink-0 overflow-hidden rounded-xl bg-muted sm:mx-0 sm:max-w-[15rem]">
           {movie.poster ? (

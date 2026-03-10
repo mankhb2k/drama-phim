@@ -1,5 +1,5 @@
 /**
- * Base URL của site (ví dụ: https://dramahd.vn).
+ * Base URL của site (ví dụ: https://dramahd.net).
  * Dùng cho canonical URL, Open Graph URL, v.v.
  * Set NEXT_PUBLIC_SITE_URL trong .env (production).
  */
