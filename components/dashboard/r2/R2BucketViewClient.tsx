@@ -55,6 +55,7 @@ export function R2BucketViewClient({
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<R2FolderItem | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const sidebarResizeRef = useRef<{ startX: number; startW: number } | null>(null);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -91,6 +92,15 @@ export function R2BucketViewClient({
   const [folderActionLoading, setFolderActionLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const mountedRef = useRef(true);
+  const uploadTargetPrefixRef = useRef<string>("");
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const prefixFromUrl = pathSegmentsToPrefix(pathSegments);
 
@@ -362,12 +372,14 @@ export function R2BucketViewClient({
   const handleUploadFiles = useCallback(
     async (files: FileList | null) => {
       if (!files || files.length === 0) return;
+      const targetPrefix = prefixFromUrl;
+      uploadTargetPrefixRef.current = targetPrefix;
       setUploading(true);
       setError(null);
       try {
         const formData = new FormData();
         formData.set("bucket", bucketSlug);
-        formData.set("prefix", prefixFromUrl);
+        formData.set("prefix", targetPrefix);
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           if (file?.name) formData.append("file", file);
@@ -391,17 +403,48 @@ export function R2BucketViewClient({
               : `Upload thất bại (${res.status})`);
           throw new Error(msg);
         }
-        await loadObjects(prefixFromUrl);
+        if (!mountedRef.current) return;
+        const currentPrefixNow = useR2ManagerStore.getState().currentPrefix;
+        if (currentPrefixNow === uploadTargetPrefixRef.current) {
+          await loadObjects(uploadTargetPrefixRef.current);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi khi upload file");
+        if (mountedRef.current) {
+          setError(err instanceof Error ? err.message : "Lỗi khi upload file");
+        }
       } finally {
-        setUploading(false);
+        if (mountedRef.current) {
+          setUploading(false);
+        }
         if (uploadInputRef.current) {
           uploadInputRef.current.value = "";
         }
       }
     },
     [bucketSlug, prefixFromUrl, loadObjects],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes("Files")) setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      const files = e.dataTransfer.files;
+      if (files?.length) void handleUploadFiles(files);
+    },
+    [handleUploadFiles],
   );
 
   const handleMoveSelected = async () => {
@@ -615,7 +658,12 @@ export function R2BucketViewClient({
             aria-label="Kéo để co giãn sidebar"
           />
         </div>
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div
+          className="relative flex min-w-0 flex-1 flex-col"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             ref={uploadInputRef}
             type="file"
@@ -623,6 +671,16 @@ export function R2BucketViewClient({
             className="hidden"
             onChange={(e) => handleUploadFiles(e.target.files)}
           />
+          {isDragOver && (
+            <div
+              className="absolute inset-0 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/5"
+              aria-hidden
+            >
+              <span className="rounded-md bg-background/95 px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+                Thả file vào đây để upload
+              </span>
+            </div>
+          )}
           <R2ActionsToolbar
             onCreateFolder={handleOpenCreateFolder}
             onRefresh={() => loadObjects(prefixFromUrl)}
