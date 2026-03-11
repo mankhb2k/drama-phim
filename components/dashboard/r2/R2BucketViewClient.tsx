@@ -53,6 +53,41 @@ export function R2BucketViewClient({
   const [renameFolderTarget, setRenameFolderTarget] = useState<R2FolderItem | null>(null);
   const [moveFolderTarget, setMoveFolderTarget] = useState<R2FolderItem | null>(null);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<R2FolderItem | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarResizeRef = useRef<{ startX: number; startW: number } | null>(null);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    sidebarResizeRef.current = { startX: e.clientX, startW: sidebarWidth };
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const minW = 180;
+    const maxW = 480;
+    const onMove = (e: MouseEvent) => {
+      const ref = sidebarResizeRef.current;
+      if (!ref) return;
+      const delta = e.clientX - ref.startX;
+      setSidebarWidth((w) => Math.min(maxW, Math.max(minW, ref.startW + delta)));
+    };
+    const onEnd = () => {
+      setIsResizing(false);
+      sidebarResizeRef.current = null;
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onEnd);
+    return () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onEnd);
+    };
+  }, [isResizing]);
   const [folderActionLoading, setFolderActionLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -563,14 +598,23 @@ export function R2BucketViewClient({
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-        <div className="hidden w-64 shrink-0 md:block">
+        <div
+          className="relative hidden shrink-0 flex-col md:flex"
+          style={{ width: sidebarWidth }}
+        >
           <FolderTreeSidebar
             rootLabel={bucketSlug}
             bucketSlug={bucketSlug}
             onFolderContextMenu={handleFolderContextMenu}
           />
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            onMouseDown={handleResizeStart}
+            className={`absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize select-none transition-colors hover:bg-primary/20 ${isResizing ? "bg-primary/30" : ""}`}
+            aria-label="Kéo để co giãn sidebar"
+          />
         </div>
-
         <div className="flex min-w-0 flex-1 flex-col">
           <input
             ref={uploadInputRef}

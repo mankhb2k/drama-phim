@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, FolderTree } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderTree, Search } from "lucide-react";
 import { cn, naturalCompare } from "@/lib/utils";
 import { useR2ManagerStore, R2FolderItem } from "@/lib/stores/r2-manager-store";
 
@@ -61,6 +61,17 @@ export function FolderTreeSidebar({
     [directChildFolders],
   );
 
+  const [folderSearch, setFolderSearch] = useState("");
+  const filteredChildFolders = useMemo(() => {
+    const q = folderSearch.trim().toLowerCase();
+    if (!q) return directChildFolders;
+    return directChildFolders.filter(
+      (folder: R2FolderItem) =>
+        folder.name.toLowerCase().includes(q) ||
+        folder.prefix.toLowerCase().includes(q),
+    );
+  }, [directChildFolders, folderSearch]);
+
   const [folderCounts, setFolderCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -115,10 +126,24 @@ export function FolderTreeSidebar({
   return (
     <div className="flex h-full flex-col border-r border-border bg-card">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <FolderTree className="size-4 text-muted-foreground" />
+        <FolderTree className="size-4 shrink-0 text-muted-foreground" />
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Cấu trúc R2
         </span>
+      </div>
+      <div className="border-b border-border px-2 py-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={folderSearch}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setFolderSearch(e.target.value)
+            }
+            placeholder="Tìm thư mục / prefix..."
+            className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-xs outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-2 text-sm">
         <div>
@@ -163,13 +188,18 @@ export function FolderTreeSidebar({
             </>
           )}
 
-          {directChildFolders.length > 0 && (
+          {filteredChildFolders.length > 0 && (
             <>
               <span className="mb-1 mt-2 block px-2 text-xs font-medium text-muted-foreground">
                 Thư mục
+                {folderSearch.trim() && (
+                  <span className="ml-1 font-normal">
+                    ({filteredChildFolders.length})
+                  </span>
+                )}
               </span>
               <div className="mt-1 space-y-0.5 pl-4">
-                {directChildFolders.map((folder: R2FolderItem) => {
+                {filteredChildFolders.map((folder: R2FolderItem) => {
                   const href = folderHref(folder);
                   const isActive = currentPrefix === folder.prefix;
                   return (
@@ -205,6 +235,13 @@ export function FolderTreeSidebar({
               </div>
             </>
           )}
+          {directChildFolders.length > 0 &&
+            filteredChildFolders.length === 0 &&
+            folderSearch.trim() && (
+              <p className="mt-2 px-2 text-xs text-muted-foreground">
+                Không có thư mục khớp &quot;{folderSearch.trim()}&quot;
+              </p>
+            )}
         </div>
       </div>
     </div>
