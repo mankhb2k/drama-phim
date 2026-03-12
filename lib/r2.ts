@@ -55,10 +55,25 @@ export function getR2Config(): R2Config {
   return getR2EnvConfig();
 }
 
+/**
+ * Lấy public base URL cho bucket (ưu tiên env R2_PUBLIC_BASE_URL_<BUCKET>).
+ * VD: bucket "cover" → R2_PUBLIC_BASE_URL_COVER=https://cover.dramahd.net
+ *     bucket "movie-poster" → R2_PUBLIC_BASE_URL_MOVIE_POSTER
+ */
+function getPublicBaseUrlForBucket(bucketName: string, defaultBaseUrl: string): string {
+  const key = `R2_PUBLIC_BASE_URL_${bucketName.toUpperCase().replace(/-/g, "_")}`;
+  const value = process.env[key];
+  if (value && typeof value === "string" && value.trim()) {
+    return value.replace(/\/+$/, "");
+  }
+  return defaultBaseUrl;
+}
+
 /** Cấu hình R2 với bucket cụ thể (cho dashboard đa bucket). */
 export function getR2ConfigWithBucket(bucketOverride: string): R2Config {
   const base = getR2EnvConfig();
-  return { ...base, bucket: bucketOverride };
+  const publicBaseUrl = getPublicBaseUrlForBucket(bucketOverride, base.publicBaseUrl);
+  return { ...base, bucket: bucketOverride, publicBaseUrl };
 }
 
 export function getR2Client(): S3Client {

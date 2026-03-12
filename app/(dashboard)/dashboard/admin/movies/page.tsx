@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PlusCircle, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 
 export default async function DashboardMoviesPage() {
   const movies = await prisma.movie.findMany({

@@ -12,7 +12,8 @@ Cần có **đủ** các biến sau (thiếu một cái là API có thể throw 
 | `R2_ACCESS_KEY_ID` | Access Key (tạo trong R2 → Manage R2 API Tokens) | |
 | `R2_SECRET_ACCESS_KEY` | Secret Key đi kèm Access Key | |
 | `R2_BUCKET_NAME` hoặc `R2_BUCKET` | Tên một bucket bất kỳ (dùng cho config mặc định) | `video` |
-| `R2_PUBLIC_URL` hoặc `R2_PUBLIC_BASE_URL` | URL public để xem file (custom domain hoặc R2.dev) | `https://pub-xxx.r2.dev` hoặc `https://img.example.com` |
+| `R2_PUBLIC_URL` hoặc `R2_PUBLIC_BASE_URL` | URL public mặc định để xem file (custom domain hoặc R2.dev) | `https://pub-xxx.r2.dev` hoặc `https://video.dramahd.net` |
+| `R2_PUBLIC_BASE_URL_<BUCKET>` | (Tùy chọn) URL public riêng cho từng bucket. Tên biến: bucket viết HOA, dấu `-` thành `_`. VD: bucket `cover` → `R2_PUBLIC_BASE_URL_COVER=https://cover.dramahd.net` | Dùng khi mỗi bucket có domain riêng (vd. poster từ bucket `cover` → link dạng `https://cover.dramahd.net/nsh/xxx.webp`) |
 
 - **Lấy Endpoint**: Trong Cloudflare Dashboard → R2 → bucket → S3 API, copy endpoint (dạng `https://<account_id>.r2.cloudflarestorage.com`).
 - **Tạo API Token**: R2 → Manage R2 API Tokens → Create API token, quyền Object Read & Write, gắn bucket cần dùng (hoặc All buckets). Copy **Access Key ID** và **Secret Access Key** vào `.env`.

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Trash2, Cloud, Subtitles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, Select, Input, Textarea, Label, Checkbox, type SelectOption } from "@/components/ui";
 import {
   R2MovieFolderPickerModal,
   type R2ApplyItem,
@@ -12,6 +12,8 @@ import {
   R2SubtitleFolderPickerModal,
   type R2SubApplyItem,
 } from "@/components/dashboard/r2/R2SubtitleFolderPickerModal";
+import { R2PosterPickerModal } from "@/components/dashboard/r2/R2PosterPickerModal";
+import { useToastStore } from "@/lib/stores/toast-store";
 
 type Genre = { id: number; slug: string; name: string };
 type Tag = { id: number; slug: string; name: string };
@@ -50,19 +52,19 @@ export default function DashboardNewMoviePage() {
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const addToast = useToastStore((state) => state.addToast);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [channel, setChannel] = useState("nsh");
+  const [channelOptions, setChannelOptions] = useState<SelectOption[]>([
+    { value: "nsh", label: "nsh" },
+  ]);
+  const [channelLoading, setChannelLoading] = useState(false);
   const [originalTitle, setOriginalTitle] = useState("");
   const [description, setDescription] = useState("");
   const [poster, setPoster] = useState("");
-  const [backdrop, setBackdrop] = useState("");
   const [year, setYear] = useState("");
   const [status, setStatus] = useState<"ONGOING" | "COMPLETED">("ONGOING");
   const [audioType, setAudioType] = useState<"NONE" | "SUB" | "DUBBED">("NONE");
@@ -72,6 +74,7 @@ export default function DashboardNewMoviePage() {
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
   const [r2MoviePickerOpen, setR2MoviePickerOpen] = useState(false);
   const [r2SubPickerOpen, setR2SubPickerOpen] = useState(false);
+  const [r2PosterPickerOpen, setR2PosterPickerOpen] = useState(false);
 
   const fetchOptions = useCallback(async () => {
     try {
@@ -88,9 +91,108 @@ export default function DashboardNewMoviePage() {
     }
   }, []);
 
+  const fetchChannels = useCallback(async () => {
+    setChannelLoading(true);
+    try {
+      const res = await fetch("/api/dashboard/channels");
+      if (!res.ok) return;
+      const json = (await res.json()) as {
+        items?: Array<{ slug: string; name: string }>;
+      };
+      const items = json.items ?? [];
+      if (items.length > 0) {
+        setChannelOptions(
+          items.map((c: { slug: string; name: string }) => ({
+            value: c.slug,
+            label: c.name || c.slug,
+          })),
+        );
+        if (!channel) {
+          setChannel(items[0]?.slug ?? "nsh");
+        }
+      }
+    } catch {
+      // ignore, dùng default
+    } finally {
+      setChannelLoading(false);
+    }
+  }, [channel]);
+
   useEffect(() => {
     fetchOptions();
-  }, [fetchOptions]);
+    fetchChannels();
+  }, [fetchOptions, fetchChannels]);
+
+  const handleQuickCreateChannel = async () => {
+    const slugInput = window.prompt("Nhập slug channel (vd: nsh, drama-hd):", "");
+    const slugValue = slugInput?.trim();
+    if (!slugValue) return;
+    try {
+      const res = await fetch("/api/dashboard/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: slugValue }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        addToast("error", data.error ?? "Không tạo được channel");
+        return;
+      }
+      const created = (await res.json()) as { slug: string; name: string };
+      const option: SelectOption = {
+        value: created.slug,
+        label: created.name || created.slug,
+      };
+      setChannelOptions((prev) => {
+        const exists = prev.some(
+          (c: SelectOption) => c.value === option.value,
+        );
+        return exists ? prev : [...prev, option];
+      });
+      setChannel(created.slug);
+      addToast("success", `Đã tạo channel "${created.slug}"`);
+    } catch {
+      addToast("error", "Không tạo được channel mới");
+    }
+  };
+
+  const handleDeleteCurrentChannel = async () => {
+    if (!channel || channel === "nsh") {
+      addToast(
+        "error",
+        "Không thể xóa channel mặc định hoặc khi chưa chọn channel.",
+      );
+      return;
+    }
+    const ok = window.confirm(
+      `Bạn có chắc chắn muốn xóa channel "${channel}"?\nCác phim đang dùng sẽ được chuyển về channel \"nsh\".`,
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch(
+        `/api/dashboard/channels/${encodeURIComponent(
+          channel,
+        )}?force=1`,
+        { method: "DELETE" },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!res.ok) {
+        addToast("error", data.error ?? "Không xóa được channel");
+        return;
+      }
+      setChannelOptions((prev) =>
+        prev.filter((c: SelectOption) => c.value !== channel),
+      );
+      setChannel("nsh");
+      addToast("success", "Đã xóa channel và chuyển phim về 'nsh'");
+    } catch {
+      addToast("error", "Không xóa được channel");
+    }
+  };
 
   const toggleGenre = (id: number) => {
     setGenreIds((prev) =>
@@ -289,7 +391,6 @@ export default function DashboardNewMoviePage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setMessage(null);
     setSubmitting(true);
     try {
       const payload = {
@@ -300,7 +401,6 @@ export default function DashboardNewMoviePage() {
         originalTitle: originalTitle.trim() || undefined,
         description: description.trim() || undefined,
         poster: poster.trim() || undefined,
-        backdrop: backdrop.trim() || undefined,
         year: year === "" ? undefined : Number(year),
         status,
         genreIds,
@@ -338,18 +438,15 @@ export default function DashboardNewMoviePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage({
-          type: "error",
-          text: data.error ?? "Thêm phim thất bại.",
-        });
+        addToast("error", data.error ?? "Thêm phim thất bại.");
         return;
       }
-      setMessage({
-        type: "success",
-        text: `Thêm phim thành công: "${data.title}" (${data.slug}${
+      addToast(
+        "success",
+        `Thêm phim thành công: "${data.title}" (${data.slug}${
           data.episodes?.length ? `, ${data.episodes.length} tập` : ""
         }).`,
-      });
+      );
       setSubmitSuccess(true);
       setTitle("");
       setSlug("");
@@ -357,7 +454,6 @@ export default function DashboardNewMoviePage() {
       setOriginalTitle("");
       setDescription("");
       setPoster("");
-      setBackdrop("");
       setYear("");
       setStatus("ONGOING");
       setAudioType("NONE");
@@ -371,14 +467,13 @@ export default function DashboardNewMoviePage() {
 
   const handleAddNew = () => {
     setSubmitSuccess(false);
-    setMessage(null);
   };
 
   if (loading) {
     return <p className="text-muted-foreground">Đang tải...</p>;
   }
 
-  if (submitSuccess && message?.type === "success") {
+  if (submitSuccess) {
     return (
       <div className="flex flex-col gap-6">
         <div>
@@ -387,9 +482,10 @@ export default function DashboardNewMoviePage() {
           </h1>
         </div>
         <div className="flex max-w-2xl flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="rounded-md bg-green-500/10 text-green-700 dark:text-green-400">
-            <p className="px-3 py-2 text-sm font-medium">{message.text}</p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Đã thêm phim thành công. Bạn có thể thêm phim mới hoặc trở về danh
+            sách.
+          </p>
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={handleAddNew}
@@ -422,12 +518,6 @@ export default function DashboardNewMoviePage() {
         onSubmit={handleSubmit}
         className="flex max-w-3xl flex-col gap-8 rounded-xl border border-border bg-card p-6 shadow-sm"
       >
-        {message && message.type === "error" && (
-          <div className="rounded-md bg-destructive/10 text-destructive">
-            <p className="px-3 py-2 text-sm font-medium">{message.text}</p>
-          </div>
-        )}
-
         {/* Thông tin phim */}
         <section className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-foreground">
@@ -435,175 +525,153 @@ export default function DashboardNewMoviePage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2 sm:col-span-2">
-              <label
-                htmlFor="title"
-                className="text-sm font-medium text-foreground"
-              >
+              <Label htmlFor="title">
                 Tiêu đề <span className="text-destructive">*</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 id="title"
                 type="text"
                 required
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setTitle(e.target.value)
+                }
                 placeholder="VD: Trùm Quỷ Dương"
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="slug"
-                className="text-sm font-medium text-foreground"
-              >
+              <Label htmlFor="slug">
                 Slug (để trống = tự tạo từ tiêu đề)
-              </label>
-              <input
+              </Label>
+              <Input
                 id="slug"
                 type="text"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSlug(e.target.value)
+                }
                 placeholder="VD: trum-quy-duong"
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="channel"
-                className="text-sm font-medium text-foreground"
-              >
-                Channel URL
-              </label>
-              <input
-                id="channel"
-                type="text"
-                value={channel}
-                onChange={(e) => setChannel(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="nsh"
-              />
+              <Label htmlFor="channel">Channel</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select
+                    id="channel"
+                    label="Channel"
+                    options={channelOptions}
+                    value={channel}
+                    onChange={(value: string) => setChannel(value)}
+                    placeholder={channelLoading ? "Đang tải..." : "Chọn channel"}
+                    data-testid="channel-select"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleQuickCreateChannel}
+                  >
+                    Thêm
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteCurrentChannel}
+                  >
+                    Xóa
+                  </Button>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="year"
-                className="text-sm font-medium text-foreground"
-              >
-                Năm
-              </label>
-              <input
+              <Label htmlFor="year">Năm</Label>
+              <Input
                 id="year"
                 type="number"
                 min={1900}
                 max={2100}
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setYear(e.target.value)
+                }
                 placeholder="2024"
               />
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2">
-              <label
-                htmlFor="originalTitle"
-                className="text-sm font-medium text-foreground"
-              >
-                Tên gốc
-              </label>
-              <input
+              <Label htmlFor="originalTitle">Tên gốc</Label>
+              <Input
                 id="originalTitle"
                 type="text"
                 value={originalTitle}
-                onChange={(e) => setOriginalTitle(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setOriginalTitle(e.target.value)
+                }
                 placeholder="VD: Devil's Sun"
               />
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2">
-              <label
-                htmlFor="description"
-                className="text-sm font-medium text-foreground"
-              >
-                Mô tả
-              </label>
-              <textarea
+              <Label htmlFor="description">Mô tả</Label>
+              <Textarea
                 id="description"
                 rows={3}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setDescription(e.target.value)
+                }
                 placeholder="Tóm tắt nội dung phim..."
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="poster"
-                className="text-sm font-medium text-foreground"
-              >
-                Poster (URL)
-              </label>
-              <input
-                id="poster"
-                type="url"
-                value={poster}
-                onChange={(e) => setPoster(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="https://..."
-              />
+              <Label htmlFor="poster">Poster (URL)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="poster"
+                  type="url"
+                  value={poster}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setPoster(e.target.value)
+                  }
+                  className="flex-1"
+                  placeholder="https://..."
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setR2PosterPickerOpen(true)}
+                  className="shrink-0"
+                >
+                  Chọn từ R2
+                </Button>
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="backdrop"
-                className="text-sm font-medium text-foreground"
-              >
-                Backdrop (URL)
-              </label>
-              <input
-                id="backdrop"
-                type="url"
-                value={backdrop}
-                onChange={(e) => setBackdrop(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="https://..."
-              />
-            </div>
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label
-                htmlFor="status"
-                className="text-sm font-medium text-foreground"
-              >
-                Trạng thái
-              </label>
-              <select
-                id="status"
-                value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value as "ONGOING" | "COMPLETED")
-                }
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="ONGOING">Đang chiếu</option>
-                <option value="COMPLETED">Đã hoàn thành</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label
-                htmlFor="audioType"
-                className="text-sm font-medium text-foreground"
-              >
-                Loại phim
-              </label>
-              <select
-                id="audioType"
-                value={audioType}
-                onChange={(e) =>
-                  setAudioType(e.target.value as "NONE" | "SUB" | "DUBBED")
-                }
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="NONE">Không xác định</option>
-                <option value="SUB">Phim sub</option>
-                <option value="DUBBED">Phim lồng tiếng</option>
-              </select>
-            </div>
+            <Select
+              id="status"
+              label="Trạng thái"
+              value={status}
+              onChange={(v) => setStatus(v as "ONGOING" | "COMPLETED")}
+              options={[
+                { value: "ONGOING", label: "Đang chiếu" },
+                { value: "COMPLETED", label: "Đã hoàn thành" },
+              ]}
+              className="sm:col-span-2"
+            />
+            <Select
+              id="audioType"
+              label="Loại phim"
+              value={audioType}
+              onChange={(v) => setAudioType(v as "NONE" | "SUB" | "DUBBED")}
+              options={[
+                { value: "NONE", label: "Không xác định" },
+                { value: "SUB", label: "Phim sub" },
+                { value: "DUBBED", label: "Phim lồng tiếng" },
+              ]}
+              className="sm:col-span-2"
+            />
             <div className="flex flex-col gap-2 sm:col-span-2">
               <span className="text-sm font-medium text-foreground">
                 Thể loại
@@ -612,13 +680,11 @@ export default function DashboardNewMoviePage() {
                 {genres.map((g: Genre) => (
                   <label
                     key={g.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                    className="checkbox-pill flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={genreIds.includes(g.id)}
-                      onChange={() => toggleGenre(g.id)}
-                      className="size-4 rounded border-input"
+                      onCheckedChange={() => toggleGenre(g.id)}
                     />
                     {g.name}
                   </label>
@@ -636,13 +702,11 @@ export default function DashboardNewMoviePage() {
                 {labels.map((l: Label) => (
                   <label
                     key={l.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                    className="checkbox-pill flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={labelIds.includes(l.id)}
-                      onChange={() => toggleLabel(l.id)}
-                      className="size-4 rounded border-input"
+                      onCheckedChange={() => toggleLabel(l.id)}
                     />
                     {l.name}
                   </label>
@@ -660,13 +724,11 @@ export default function DashboardNewMoviePage() {
                 {tags.map((t: Tag) => (
                   <label
                     key={t.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                    className="checkbox-pill flex cursor-pointer items-center gap-2 rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={tagIds.includes(t.id)}
-                      onChange={() => toggleTag(t.id)}
-                      className="size-4 rounded border-input"
+                      onCheckedChange={() => toggleTag(t.id)}
                     />
                     {t.name}
                   </label>
@@ -740,29 +802,29 @@ export default function DashboardNewMoviePage() {
                   className="rounded-lg border border-border bg-muted/20 p-4"
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-3">
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       value={ep.episodeNumber}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         updateEpisode(
                           ep.id,
                           "episodeNumber",
                           Number(e.target.value) || 1,
                         )
                       }
-                      className="w-20 rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="w-20"
                     />
                     <span className="text-sm font-medium text-foreground">
                       Tập
                     </span>
-                    <input
+                    <Input
                       type="text"
                       value={ep.name}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         updateEpisode(ep.id, "name", e.target.value)
                       }
-                      className="flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="min-w-0 flex-1"
                       placeholder="Tên tập (tùy chọn)"
                     />
                     <Button
@@ -779,20 +841,20 @@ export default function DashboardNewMoviePage() {
 
                   {audioType === "SUB" && (
                     <div className="mb-3 flex flex-col gap-1">
-                      <label
+                      <Label
                         htmlFor={`sub-${ep.id}`}
                         className="text-xs font-medium text-muted-foreground"
                       >
                         Link sub tập {ep.episodeNumber}
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         id={`sub-${ep.id}`}
                         type="url"
                         value={ep.subtitleUrl ?? ""}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           updateEpisode(ep.id, "subtitleUrl", e.target.value)
                         }
-                        className="rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="py-1.5"
                         placeholder="https://..."
                       />
                     </div>
@@ -825,10 +887,10 @@ export default function DashboardNewMoviePage() {
                           key={srv.id}
                           className="flex flex-wrap items-center gap-2 rounded border border-border bg-background p-2"
                         >
-                          <input
+                          <Input
                             type="text"
                             value={srv.name}
-                            onChange={(e) =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               updateServer(
                                 ep.id,
                                 srv.id,
@@ -836,13 +898,13 @@ export default function DashboardNewMoviePage() {
                                 e.target.value,
                               )
                             }
-                            className="w-28 rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            className="w-28 py-1.5"
                             placeholder="VD: R2 Storage"
                           />
-                          <input
+                          <Input
                             type="url"
                             value={srv.embedUrl}
-                            onChange={(e) =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               updateServer(
                                 ep.id,
                                 srv.id,
@@ -850,7 +912,7 @@ export default function DashboardNewMoviePage() {
                                 e.target.value,
                               )
                             }
-                            className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            className="min-w-0 flex-1 py-1.5"
                             placeholder="https://cdn.com/video.mp4?"
                           />
                           <Button
@@ -890,6 +952,11 @@ export default function DashboardNewMoviePage() {
           episodeNumber: ep.episodeNumber,
         }))}
         onApply={handleR2Apply}
+      />
+      <R2PosterPickerModal
+        open={r2PosterPickerOpen}
+        onClose={() => setR2PosterPickerOpen(false)}
+        onSelect={(url: string) => setPoster(url)}
       />
       <R2SubtitleFolderPickerModal
         open={r2SubPickerOpen}

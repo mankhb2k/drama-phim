@@ -1,6 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Button,
+  Input,
+  Label,
+} from "@/components/ui";
 
 const FOLDER_NAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -72,43 +83,28 @@ export function CreateFolderDialog({
     setTouched(false);
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="create-folder-title"
-      onClick={handleClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-lg"
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
-      >
-        <h2
-          id="create-folder-title"
-          className="mb-3 text-lg font-semibold text-foreground"
-        >
-          Tạo thư mục mới
-        </h2>
-        <p className="mb-3 text-xs text-muted-foreground">
-          Chữ thường, số và dấu gạch ngang (-). Không dấu cách, không ký tự đặc biệt, không kết thúc bằng &quot;-&quot;.
-        </p>
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-sm" showClose={!isLoading}>
+        <DialogHeader>
+          <DialogTitle>Tạo thư mục mới</DialogTitle>
+          <DialogDescription>
+            Chữ thường, số và dấu gạch ngang (-). Không dấu cách, không ký tự đặc biệt, không kết thúc bằng &quot;-&quot;.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="create-folder-name" className="mb-1 block text-sm font-medium text-foreground">
-              Tên thư mục
-            </label>
-            <input
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="create-folder-name">Tên thư mục</Label>
+            <Input
               id="create-folder-name"
               type="text"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setValue(e.target.value)
+              }
               onBlur={() => setTouched(true)}
               placeholder="vd: tap-1 hoặc phim-moi"
               autoComplete="off"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
               disabled={isLoading}
             />
             {error && (
@@ -120,25 +116,24 @@ export function CreateFolderDialog({
               </p>
             )}
           </div>
-          <div className="flex justify-end gap-2">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
+              variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
             >
               Hủy
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={!!error || !normalized || isLoading}
-              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {isLoading ? "Đang tạo…" : "Tạo thư mục"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

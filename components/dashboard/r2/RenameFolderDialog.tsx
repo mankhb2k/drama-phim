@@ -1,6 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Button,
+  Input,
+  Label,
+} from "@/components/ui";
 import type { R2FolderItem } from "@/lib/stores/r2-manager-store";
 
 const FOLDER_NAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -71,42 +82,30 @@ export function RenameFolderDialog({
     if (!isLoading) onClose();
   }, [isLoading, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="rename-folder-title"
-      onClick={handleClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-lg"
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
-      >
-        <h2 id="rename-folder-title" className="mb-3 text-lg font-semibold text-foreground">
-          Đổi tên folder
-        </h2>
-        {folder && (
-          <p className="mb-3 text-xs text-muted-foreground">
-            Đường dẫn hiện tại: <span className="font-mono text-foreground">{folder.prefix}</span>
-          </p>
-        )}
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-sm" showClose={!isLoading}>
+        <DialogHeader>
+          <DialogTitle>Đổi tên folder</DialogTitle>
+          {folder && (
+            <DialogDescription>
+              Đường dẫn hiện tại: <span className="font-mono text-foreground">{folder.prefix}</span>
+            </DialogDescription>
+          )}
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="rename-folder-name" className="mb-1 block text-sm font-medium text-foreground">
-              Tên mới
-            </label>
-            <input
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="rename-folder-name">Tên mới</Label>
+            <Input
               id="rename-folder-name"
               type="text"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setValue(e.target.value)
+              }
               onBlur={() => setTouched(true)}
               placeholder="vd: tap-1"
               autoComplete="off"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
               disabled={isLoading}
             />
             {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
@@ -116,25 +115,24 @@ export function RenameFolderDialog({
               </p>
             )}
           </div>
-          <div className="flex justify-end gap-2">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
+              variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
             >
               Hủy
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={!!error || !normalized || isLoading}
-              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {isLoading ? "Đang lưu…" : "Lưu"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

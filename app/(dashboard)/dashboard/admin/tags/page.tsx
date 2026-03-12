@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, Input, Label } from "@/components/ui";
+import { useConfirmStore } from "@/lib/stores/confirm-store";
 import { Pencil, Plus, Trash2, Tag, StickyNote } from "lucide-react";
 
 interface TagRow {
@@ -220,30 +221,42 @@ export default function DashboardTagsPage() {
     }
   };
 
-  const handleDeleteTag = async (id: number) => {
-    if (!confirm("Xóa tag này? Phim gắn tag sẽ bỏ liên kết.")) return;
-    try {
-      const res = await fetch(`/api/dashboard/tags/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (res.ok) await fetchTags();
-    } catch {
-      // ignore
-    }
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
+
+  const handleDeleteTag = (id: number) => {
+    openConfirm({
+      title: "Xóa tag",
+      description: "Xóa tag này? Phim gắn tag sẽ bỏ liên kết.",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/dashboard/tags/${id}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+          if (res.ok) await fetchTags();
+        } catch {
+          // ignore
+        }
+      },
+    });
   };
 
-  const handleDeleteLabel = async (id: number) => {
-    if (!confirm("Xóa label này? Phim gắn label sẽ bỏ liên kết.")) return;
-    try {
-      const res = await fetch(`/api/dashboard/labels/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (res.ok) await fetchLabels();
-    } catch {
-      // ignore
-    }
+  const handleDeleteLabel = (id: number) => {
+    openConfirm({
+      title: "Xóa label",
+      description: "Xóa label này? Phim gắn label sẽ bỏ liên kết.",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/dashboard/labels/${id}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+          if (res.ok) await fetchLabels();
+        } catch {
+          // ignore
+        }
+      },
+    });
   };
 
   return (
@@ -268,33 +281,29 @@ export default function DashboardTagsPage() {
             onSubmit={handleAddTag}
             className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-muted/30 p-3"
           >
-            <div>
-              <label className="mb-1 block text-xs font-medium text-foreground">
-                Tên tag
-              </label>
-              <input
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Tên tag</Label>
+              <Input
                 type="text"
                 value={tagForm.name}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setTagForm((p) => ({ ...p, name: e.target.value }))
                 }
-                className="w-40 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-40 py-1.5"
                 placeholder="VD: han-quoc"
                 required
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-foreground">
-                Thứ tự
-              </label>
-              <input
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Thứ tự</Label>
+              <Input
                 type="number"
                 min={1}
                 value={tagForm.order}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setTagForm((p) => ({ ...p, order: e.target.value }))
                 }
-                className="w-20 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-20 py-1.5"
                 placeholder="1"
               />
             </div>
@@ -312,45 +321,39 @@ export default function DashboardTagsPage() {
               onSubmit={handleUpdateTag}
               className="flex flex-wrap items-end gap-3 rounded-lg border border-primary/50 bg-muted/30 p-3"
             >
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Tên
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Tên</Label>
+                <Input
                   type="text"
                   value={editTagForm.name}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditTagForm((p) => ({ ...p, name: e.target.value }))
                   }
-                  className="w-40 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  className="w-40 py-1.5"
                   required
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Slug
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Slug</Label>
+                <Input
                   type="text"
                   value={editTagForm.slug}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditTagForm((p) => ({ ...p, slug: e.target.value }))
                   }
-                  className="w-40 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  className="w-40 py-1.5"
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Thứ tự
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Thứ tự</Label>
+                <Input
                   type="number"
                   min={1}
                   value={editTagForm.order}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditTagForm((p) => ({ ...p, order: e.target.value }))
                   }
-                  className="w-20 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  className="w-20 py-1.5"
                 />
               </div>
               <Button type="submit" size="sm">
@@ -461,41 +464,35 @@ export default function DashboardTagsPage() {
             onSubmit={handleAddLabel}
             className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-muted/30 p-3"
           >
-            <div>
-              <label className="mb-1 block text-xs font-medium text-foreground">
-                Tên nhãn
-              </label>
-              <input
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Tên nhãn</Label>
+              <Input
                 type="text"
                 value={labelForm.name}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setLabelForm((p) => ({ ...p, name: e.target.value }))
                 }
-                className="w-40 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-40 py-1.5"
                 placeholder="VD: Hot"
                 required
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-foreground">
-                Thứ tự
-              </label>
-              <input
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Thứ tự</Label>
+              <Input
                 type="number"
                 min={1}
                 value={labelForm.order}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setLabelForm((p) => ({ ...p, order: e.target.value }))
                 }
-                className="w-20 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-20 py-1.5"
                 placeholder="1"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-foreground">
-                Màu chữ
-              </label>
-              <input
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Màu chữ</Label>
+              <Input
                 type="color"
                 value={toColorInputValue(labelForm.textColor, "#ffffff")}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -505,11 +502,9 @@ export default function DashboardTagsPage() {
                 title="Chọn màu chữ"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-foreground">
-                Màu nền
-              </label>
-              <input
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Màu nền</Label>
+              <Input
                 type="color"
                 value={toColorInputValue(labelForm.backgroundColor, "#e11d48")}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -536,52 +531,44 @@ export default function DashboardTagsPage() {
               onSubmit={handleUpdateLabel}
               className="flex flex-wrap items-end gap-3 rounded-lg border border-primary/50 bg-muted/30 p-3"
             >
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Tên
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Tên</Label>
+                <Input
                   type="text"
                   value={editLabelForm.name}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditLabelForm((p) => ({ ...p, name: e.target.value }))
                   }
-                  className="w-40 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  className="w-40 py-1.5"
                   required
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Slug
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Slug</Label>
+                <Input
                   type="text"
                   value={editLabelForm.slug}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditLabelForm((p) => ({ ...p, slug: e.target.value }))
                   }
-                  className="w-40 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  className="w-40 py-1.5"
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Thứ tự
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Thứ tự</Label>
+                <Input
                   type="number"
                   min={1}
                   value={editLabelForm.order}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditLabelForm((p) => ({ ...p, order: e.target.value }))
                   }
-                  className="w-20 rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  className="w-20 py-1.5"
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Màu chữ
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Màu chữ</Label>
+                <Input
                   type="color"
                   value={toColorInputValue(editLabelForm.textColor, "#ffffff")}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -594,11 +581,9 @@ export default function DashboardTagsPage() {
                   title="Chọn màu chữ"
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-foreground">
-                  Màu nền
-                </label>
-                <input
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">Màu nền</Label>
+                <Input
                   type="color"
                   value={toColorInputValue(
                     editLabelForm.backgroundColor,

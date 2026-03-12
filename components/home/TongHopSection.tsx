@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { MovieCard } from "@/components/movie/MovieCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 
 const PAGE_SIZE = 12;
 

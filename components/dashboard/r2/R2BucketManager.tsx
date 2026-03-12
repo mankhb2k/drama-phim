@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Database, Loader2, Plus } from "lucide-react";
+import { Input, Label } from "@/components/ui";
 
 interface R2BucketManagerProps {
   onBucketsChange?: () => void;
@@ -64,19 +65,19 @@ export function R2BucketManager({ onBucketsChange }: R2BucketManagerProps) {
       </p>
 
       <form onSubmit={handleCreate} className="mb-4 flex flex-wrap items-end gap-2">
-        <label className="flex flex-1 min-w-40 flex-col gap-1">
-          <span className="text-xs font-medium text-foreground">
-            Tên bucket mới
-          </span>
-          <input
+        <div className="flex min-w-40 flex-1 flex-col gap-1">
+          <Label className="text-xs">Tên bucket mới</Label>
+          <Input
             type="text"
             value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewName(e.target.value)
+            }
             placeholder="vd: video-backup"
-            className="rounded border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+            className="py-1.5"
             disabled={createLoading}
           />
-        </label>
+        </div>
         <button
           type="submit"
           disabled={createLoading}

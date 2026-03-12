@@ -1,9 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import {
+  Button,
+  Select,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui";
 import { UserPlus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConfirmStore } from "@/lib/stores/confirm-store";
 
 interface UserRow {
   id: string;
@@ -184,30 +195,33 @@ export default function DashboardUsersPage() {
     }
   };
 
-  const handleDeleteInModal = async () => {
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
+
+  const handleDeleteInModal = () => {
     if (!editingUser) return;
-    if (
-      !confirm(
-        `Xóa user "${editingUser.username}"? Hành động không thể hoàn tác.`,
-      )
-    ) {
-      return;
-    }
-    try {
-      const res = await fetch(`/api/dashboard/users/${editingUser.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setEditError(data.error ?? "Xóa thất bại");
-        return;
-      }
-      setUsers((prev) => prev.filter((u: UserRow) => u.id !== editingUser.id));
-      closeEditModal();
-    } catch {
-      setEditError("Lỗi kết nối");
-    }
+    const userId = editingUser.id;
+    const username = editingUser.username;
+    openConfirm({
+      title: "Xóa user",
+      description: `Xóa user "${username}"? Hành động không thể hoàn tác.`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/dashboard/users/${userId}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            setEditError(data.error ?? "Xóa thất bại");
+            return;
+          }
+          setUsers((prev) => prev.filter((u: UserRow) => u.id !== userId));
+          closeEditModal();
+        } catch {
+          setEditError("Lỗi kết nối");
+        }
+      },
+    });
   };
 
   return (
@@ -243,83 +257,64 @@ export default function DashboardUsersPage() {
             <p className="mb-2 text-sm text-destructive">{formError}</p>
           )}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                Tên đăng nhập *
-              </label>
-              <input
+            <div className="flex flex-col gap-2">
+              <Label>Tên đăng nhập *</Label>
+              <Input
                 type="text"
                 value={form.username}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm((p) => ({ ...p, username: e.target.value }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 required
                 minLength={2}
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                Mật khẩu *
-              </label>
-              <input
+            <div className="flex flex-col gap-2">
+              <Label>Mật khẩu *</Label>
+              <Input
                 type="password"
                 value={form.password}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm((p) => ({ ...p, password: e.target.value }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 required
                 minLength={6}
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                Tên hiển thị
-              </label>
-              <input
+            <div className="flex flex-col gap-2">
+              <Label>Tên hiển thị</Label>
+              <Input
                 type="text"
                 value={form.name}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm((p) => ({ ...p, name: e.target.value }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                Email
-              </label>
-              <input
+            <div className="flex flex-col gap-2">
+              <Label>Email</Label>
+              <Input
                 type="email"
                 value={form.email}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm((p) => ({ ...p, email: e.target.value }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                Quyền
-              </label>
-              <select
-                value={form.role}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    role: e.target.value as "ADMIN" | "EDITOR" | "USER",
-                  }))
-                }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-              >
-                {ROLES.map((r: (typeof ROLES)[number]) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Quyền"
+              value={form.role}
+              onChange={(v) =>
+                setForm((p) => ({
+                  ...p,
+                  role: v as "ADMIN" | "EDITOR" | "USER",
+                }))
+              }
+              options={ROLES.map((r: (typeof ROLES)[number]) => ({
+                value: r.value,
+                label: r.label,
+              }))}
+            />
           </div>
           <div className="mt-3 flex gap-2">
             <Button type="submit" disabled={submitting}>
@@ -431,110 +426,82 @@ export default function DashboardUsersPage() {
       </div>
 
       {/* Modal sửa user */}
-      {editingUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-user-title"
-          onClick={closeEditModal}
-        >
-          <div
-            className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-lg"
-            onClick={(e: React.MouseEvent<HTMLDivElement>) =>
-              e.stopPropagation()
-            }
-          >
-            <h2
-              id="edit-user-title"
-              className="mb-4 text-lg font-semibold text-foreground"
-            >
-              Sửa user: {editingUser.username}
-            </h2>
-            {editError && (
-              <p className="mb-3 text-sm text-destructive">{editError}</p>
-            )}
-            <form onSubmit={handleSaveEdit} className="flex flex-col gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Tên đăng nhập *
-                </label>
-                <input
+      <Dialog open={!!editingUser} onOpenChange={(open) => !open && closeEditModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingUser ? `Sửa user: ${editingUser.username}` : "Sửa user"}
+            </DialogTitle>
+          </DialogHeader>
+          {editingUser && (
+            <>
+              {editError && (
+                <p className="mb-3 text-sm text-destructive">{editError}</p>
+              )}
+              <form onSubmit={handleSaveEdit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
+                <Label>Tên đăng nhập *</Label>
+                <Input
                   type="text"
                   value={editForm.username}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditForm((p) => ({ ...p, username: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                   required
                   minLength={2}
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Tên hiển thị
-                </label>
-                <input
+              <div className="flex flex-col gap-2">
+                <Label>Tên hiển thị</Label>
+                <Input
                   type="text"
                   value={editForm.name}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditForm((p) => ({ ...p, name: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Email
-                </label>
-                <input
+              <div className="flex flex-col gap-2">
+                <Label>Email</Label>
+                <Input
                   type="email"
                   value={editForm.email}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditForm((p) => ({ ...p, email: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Mật khẩu mới
-                </label>
-                <input
+              <div className="flex flex-col gap-2">
+                <Label>Mật khẩu mới</Label>
+                <Input
                   type="password"
                   value={editForm.password}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditForm((p) => ({ ...p, password: e.target.value }))
                   }
                   placeholder="Để trống nếu không đổi"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Quyền
-                </label>
-                <select
+                <Select
+                  label="Quyền"
                   value={editForm.role}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     setEditForm((p) => ({
                       ...p,
-                      role: e.target.value as "ADMIN" | "EDITOR" | "USER",
+                      role: v as "ADMIN" | "EDITOR" | "USER",
                     }))
                   }
                   disabled={currentUserId === editingUser.id}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
-                >
-                  {ROLES.map((r: (typeof ROLES)[number]) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
+                  options={ROLES.map((r: (typeof ROLES)[number]) => ({
+                    value: r.value,
+                    label: r.label,
+                  }))}
+                />
                 {currentUserId === editingUser.id && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     Không thể đổi quyền của chính mình
@@ -542,37 +509,36 @@ export default function DashboardUsersPage() {
                 )}
               </div>
 
-              {/* Phần Footer của Form chứa các nút bấm */}
-              <div className="mt-4 flex items-center gap-2">
-                <Button type="submit" disabled={editSubmitting}>
-                  {editSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeEditModal}
-                >
-                  Hủy
-                </Button>
-
-                {/* Nút Xóa được đẩy sang bên phải bằng ml-auto */}
+              <DialogFooter className="mt-4 flex-wrap gap-2 sm:justify-between">
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={editSubmitting}>
+                    {editSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeEditModal}
+                  >
+                    Hủy
+                  </Button>
+                </div>
                 {currentUserId !== editingUser.id && (
                   <Button
                     type="button"
                     variant="destructive"
                     onClick={handleDeleteInModal}
-                    className="ml-auto flex items-center gap-2"
+                    className="flex items-center gap-2"
                   >
                     <Trash2 className="size-4" />
                     Xóa user
                   </Button>
                 )}
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              </DialogFooter>
+              </form>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

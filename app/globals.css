@@ -151,6 +151,12 @@
   }
 }
 
+/* Pill label chứa Radix Checkbox: highlight khi checked (dùng :has() chuẩn, tránh Tailwind sinh selector lỗi) */
+.checkbox-pill:has([data-state="checked"]) {
+  border-color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 10%, transparent);
+}
+
 /* Hide scrollbar for horizontal scroll (mobile) */
 .scrollbar-hide {
   -ms-overflow-style: none;

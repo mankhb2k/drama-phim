@@ -1,6 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Button,
+  Input,
+  Label,
+} from "@/components/ui";
 import type { R2FolderItem } from "@/lib/stores/r2-manager-store";
 
 interface MoveFolderDialogProps {
@@ -65,67 +76,51 @@ export function MoveFolderDialog({
     if (!isLoading) onClose();
   }, [isLoading, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="move-folder-title"
-      onClick={handleClose}
-    >
-      <div
-        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-lg"
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
-      >
-        <h2 id="move-folder-title" className="mb-3 text-lg font-semibold text-foreground">
-          Di chuyển folder
-        </h2>
-        {folder && (
-          <p className="mb-3 text-xs text-muted-foreground">
-            Folder: <span className="font-mono text-foreground">{folder.prefix}</span>
-          </p>
-        )}
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-md" showClose={!isLoading}>
+        <DialogHeader>
+          <DialogTitle>Di chuyển folder</DialogTitle>
+          {folder && (
+            <DialogDescription>
+              Folder: <span className="font-mono text-foreground">{folder.prefix}</span>
+            </DialogDescription>
+          )}
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="move-folder-dest" className="mb-1 block text-sm font-medium text-foreground">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="move-folder-dest">
               Đường dẫn đích (prefix)
-            </label>
-            <input
+            </Label>
+            <Input
               id="move-folder-dest"
               type="text"
               value={value}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setValue(e.target.value);
                 setError(null);
               }}
               placeholder="vd: videos/nsh hoặc phim-moi/tap-1"
               autoComplete="off"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
               disabled={isLoading}
             />
             {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
           </div>
-          <div className="flex justify-end gap-2">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
+              variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
             >
               Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? "Đang di chuyển…" : "Di chuyển"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

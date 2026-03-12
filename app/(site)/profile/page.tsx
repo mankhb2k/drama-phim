@@ -5,9 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/stores/auth";
 import { useThemeStore } from "@/stores/theme";
-import { Button } from "@/components/ui/button";
+import { Button, Input, Label } from "@/components/ui";
 import { buildWatchHref } from "@/lib/watch-slug";
-import { cn } from "@/lib/utils";
+import { cn, normalizeCoverImageUrl } from "@/lib/utils";
 import {
   User,
   LogIn,
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                 <div className="relative aspect-[2/3] w-[7.5rem] overflow-hidden rounded-lg bg-muted sm:w-[8.75rem]">
                   {h.movie.poster ? (
                     <Image
-                      src={h.movie.poster}
+                      src={normalizeCoverImageUrl(h.movie.poster) ?? h.movie.poster}
                       alt={h.movie.title}
                       fill
                       sizes="8.75rem"
@@ -409,7 +409,7 @@ export default function ProfilePage() {
                   <div className="relative aspect-[2/3] w-[7.5rem] overflow-hidden rounded-lg bg-muted sm:w-[8.75rem]">
                     {f.movie.poster ? (
                       <Image
-                        src={f.movie.poster}
+                        src={normalizeCoverImageUrl(f.movie.poster) ?? f.movie.poster}
                         alt={f.movie.title}
                         fill
                         sizes="8.75rem"
@@ -512,11 +512,9 @@ export default function ProfilePage() {
 
             {authTab === "login" ? (
               <form onSubmit={handleLogin} className="mt-4 space-y-3">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
-                    Tên đăng nhập hoặc email
-                  </label>
-                  <input
+                <div className="flex flex-col gap-2">
+                  <Label>Tên đăng nhập hoặc email</Label>
+                  <Input
                     type="text"
                     name="username"
                     autoComplete="username"
@@ -524,15 +522,12 @@ export default function ProfilePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setLoginForm((p) => ({ ...p, username: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     required
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
-                    Mật khẩu
-                  </label>
-                  <input
+                <div className="flex flex-col gap-2">
+                  <Label>Mật khẩu</Label>
+                  <Input
                     type="password"
                     name="password"
                     autoComplete="current-password"
@@ -540,7 +535,6 @@ export default function ProfilePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setLoginForm((p) => ({ ...p, password: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     required
                   />
                 </div>
@@ -551,11 +545,9 @@ export default function ProfilePage() {
               </form>
             ) : (
               <form onSubmit={handleRegister} className="mt-4 space-y-3">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
-                    Tên đăng nhập *
-                  </label>
-                  <input
+                <div className="flex flex-col gap-2">
+                  <Label>Tên đăng nhập *</Label>
+                  <Input
                     type="text"
                     name="username"
                     autoComplete="username"
@@ -563,16 +555,13 @@ export default function ProfilePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, username: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     minLength={2}
                     required
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
-                    Mật khẩu *
-                  </label>
-                  <input
+                <div className="flex flex-col gap-2">
+                  <Label>Mật khẩu *</Label>
+                  <Input
                     type="password"
                     name="new-password"
                     autoComplete="new-password"
@@ -580,16 +569,13 @@ export default function ProfilePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, password: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     minLength={6}
                     required
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
-                    Tên hiển thị
-                  </label>
-                  <input
+                <div className="flex flex-col gap-2">
+                  <Label>Tên hiển thị</Label>
+                  <Input
                     type="text"
                     name="name"
                     autoComplete="name"
@@ -597,14 +583,11 @@ export default function ProfilePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, name: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
-                    Email (không bắt buộc)
-                  </label>
-                  <input
+                <div className="flex flex-col gap-2">
+                  <Label>Email (không bắt buộc)</Label>
+                  <Input
                     type="email"
                     name="email"
                     autoComplete="email"
@@ -612,7 +595,6 @@ export default function ProfilePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setRegisterForm((p) => ({ ...p, email: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                   />
                 </div>
                 <Button type="submit" disabled={authLoading} className="w-full">

@@ -81,8 +81,10 @@ export async function POST(request: NextRequest) {
     }
     const data = parsed.data;
 
-    const slug =
-      data.slug?.trim() || slugify(data.title) || `phim-${Date.now()}`;
+    const channel = data.channel.trim();
+    const slugPart =
+      slugify(data.slug?.trim() || data.title || "") || `phim-${Date.now()}`;
+    const slug = `${channel}-${slugPart}`;
     const posterUrl =
       data.poster && data.poster !== "" ? data.poster : undefined;
     const backdropUrl =

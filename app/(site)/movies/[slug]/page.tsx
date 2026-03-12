@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Play, Calendar, Film } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { buildWatchHref } from "@/lib/watch-slug";
-import { cn } from "@/lib/utils";
+import { cn, normalizeCoverImageUrl } from "@/lib/utils";
 import { FavoriteButton } from "@/components/movie/FavoriteButton";
 import { MovieDescription } from "@/components/movie/MovieDescription";
 import { getBaseUrl, getCanonicalUrl } from "@/lib/site-url";
@@ -40,7 +40,7 @@ export async function generateMetadata({
     movie.description?.trim().slice(0, 160) || DEFAULT_DESCRIPTION;
   const canonical = getCanonicalUrl(`/movies/${slug}`);
   const baseUrl = getBaseUrl() || "https://dramahd.net";
-  const ogImage = toAbsoluteImageUrl(movie.poster, baseUrl);
+  const ogImage = normalizeCoverImageUrl(toAbsoluteImageUrl(movie.poster, baseUrl) ?? undefined) ?? toAbsoluteImageUrl(movie.poster, baseUrl);
   const pageUrl = canonical ?? `${baseUrl.replace(/\/$/, "")}/movies/${slug}`;
 
   return {
@@ -92,7 +92,7 @@ export default async function MovieDetailPage({
 
   const baseUrl = getBaseUrl() || "https://dramahd.net";
   const pageUrl = getCanonicalUrl(`/movies/${slug}`) ?? `${baseUrl.replace(/\/$/, "")}/movies/${slug}`;
-  const posterUrl = toAbsoluteImageUrl(movie.poster, baseUrl);
+  const posterUrl = normalizeCoverImageUrl(toAbsoluteImageUrl(movie.poster, baseUrl) ?? undefined) ?? toAbsoluteImageUrl(movie.poster, baseUrl);
   const movieJsonLd = {
     "@context": "https://schema.org",
     "@type": "TVSeries",
@@ -115,7 +115,7 @@ export default async function MovieDetailPage({
         <div className="relative mx-auto aspect-[2/3] w-full max-w-[17.5rem] shrink-0 overflow-hidden rounded-xl bg-muted sm:mx-0 sm:max-w-[15rem]">
           {movie.poster ? (
             <Image
-              src={movie.poster}
+              src={normalizeCoverImageUrl(movie.poster) ?? movie.poster}
               alt={movie.title}
               fill
               sizes="17.5rem"

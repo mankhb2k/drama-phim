@@ -8,7 +8,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 
 export default async function DashboardOverviewPage() {
   const tagCountPromise =

@@ -1,54 +1,41 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronRight, FolderOpen, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui";
+import {
+  ChevronRight,
+  FolderOpen,
+  ImageIcon,
+  Loader2,
+  Search,
+} from "lucide-react";
+import { Dialog, DialogContent, DialogTitle, Input } from "@/components/ui";
 
-export type R2SubApplyItem = {
-  episodeNumber: number;
-  subtitleUrl: string;
-};
+const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif)$/i;
 
 type FolderItem = { name: string; prefix: string };
+type FileItem = { key: string; name: string; publicUrl: string };
 
-const SUBTITLE_EXT = /\.(vtt|srt|ass)$/i;
-
-interface R2SubtitleFolderPickerModalProps {
+interface R2PosterPickerModalProps {
   open: boolean;
   onClose: () => void;
-  episodes: { episodeNumber: number }[];
-  onApply: (items: R2SubApplyItem[]) => void;
+  onSelect: (url: string) => void;
 }
 
-/**
- * Parse episode number from subtitle filename.
- * sub-1, sub-2, sub-1.vtt, sub-2.srt, tap-1.vtt → 1, 2, 1, 2, 1.
- * Kết quả: sub-N / tap-N → gắn vào tập N (tập 1, tập 2, ...).
- */
-function episodeNumFromSubName(name: string): number | null {
-  const m = name.match(/^(?:sub|tap)-(\d+)(?:\.[^/]*)?$/i);
-  return m ? parseInt(m[1], 10) : null;
-}
-
-export function R2SubtitleFolderPickerModal({
+export function R2PosterPickerModal({
   open,
   onClose,
-  episodes,
-  onApply,
-}: R2SubtitleFolderPickerModalProps) {
+  onSelect,
+}: R2PosterPickerModalProps) {
   const [buckets, setBuckets] = useState<Array<{ name: string }>>([]);
   const [bucket, setBucket] = useState<string>("");
   const [prefix, setPrefix] = useState<string>("");
   const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingApply, setLoadingApply] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pathSegments = prefix ? prefix.replace(/\/+$/, "").split("/") : [];
-  const isAtSubtitleMovieFolder =
-    pathSegments.length >= 2 &&
-    pathSegments[0] === "subtitle" &&
-    pathSegments.length === 2;
 
   const fetchBuckets = useCallback(async () => {
     setError(null);
@@ -74,30 +61,43 @@ export function R2SubtitleFolderPickerModal({
     }
   }, [bucket]);
 
-  const fetchObjects = useCallback(async (b: string, p: string) => {
-    if (!b) return;
-    setError(null);
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("bucket", b);
-      params.set("prefix", p);
-      const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
-      const data = (await res.json()) as {
-        folders?: FolderItem[];
-        files?: Array<{ name: string }>;
-        error?: string;
-      };
-      if (!res.ok) {
-        throw new Error(data.error ?? "Không thể tải danh sách");
+  const fetchObjects = useCallback(
+    async (b: string, p: string, searchQuery: string) => {
+      if (!b) return;
+      setError(null);
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.set("bucket", b);
+        params.set("prefix", p);
+        if (searchQuery.trim()) {
+          params.set("search", searchQuery.trim());
+        }
+        const res = await fetch(
+          `/api/dashboard/r2/objects?${params.toString()}`
+        );
+        const data = (await res.json()) as {
+          folders?: FolderItem[];
+          files?: FileItem[];
+          error?: string;
+        };
+        if (!res.ok) {
+          throw new Error(data.error ?? "Không thể tải danh sách");
+        }
+        setFolders(Array.isArray(data.folders) ? data.folders : []);
+        const rawFiles = Array.isArray(data.files) ? data.files : [];
+        const imageFiles = rawFiles.filter(
+          (f: FileItem) => IMAGE_EXTENSIONS.test(f.name) && f.publicUrl
+        );
+        setFiles(imageFiles);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
+      } finally {
+        setLoading(false);
       }
-      setFolders(Array.isArray(data.folders) ? data.folders : []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -108,8 +108,8 @@ export function R2SubtitleFolderPickerModal({
 
   useEffect(() => {
     if (!open || !bucket) return;
-    void fetchObjects(bucket, prefix);
-  }, [open, bucket, prefix, fetchObjects]);
+    void fetchObjects(bucket, prefix, search);
+  }, [open, bucket, prefix, search, fetchObjects]);
 
   const handleSelectBucket = (b: string) => {
     setBucket(b);
@@ -128,97 +128,25 @@ export function R2SubtitleFolderPickerModal({
     setPrefix(pathSegments.slice(0, -1).join("/") + "/");
   };
 
-  const handleApply = useCallback(async () => {
-    if (!bucket || !prefix) return;
-    setError(null);
-    setLoadingApply(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("bucket", bucket);
-      params.set("prefix", prefix);
-      const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
-      const data = (await res.json()) as {
-        files?: Array<{ key: string; name: string; publicUrl: string }>;
-        folders?: Array<{ name: string; prefix: string }>;
-        error?: string;
-      };
-      if (!res.ok) {
-        throw new Error(data.error ?? "Không thể tải danh sách file");
-      }
-
-      const episodeToUrl = new Map<number, string>();
-
-      if (Array.isArray(data.files)) {
-        for (const f of data.files) {
-          if (!SUBTITLE_EXT.test(f.name)) continue;
-          const n = episodeNumFromSubName(f.name);
-          if (n != null && !episodeToUrl.has(n)) {
-            episodeToUrl.set(n, f.publicUrl);
-          }
-        }
-      }
-
-      if (Array.isArray(data.folders)) {
-        for (const folder of data.folders) {
-          const n = episodeNumFromSubName(folder.name);
-          if (n == null || episodeToUrl.has(n)) continue;
-          const subParams = new URLSearchParams();
-          subParams.set("bucket", bucket);
-          subParams.set("prefix", folder.prefix);
-          const subRes = await fetch(
-            `/api/dashboard/r2/objects?${subParams.toString()}`,
-          );
-          const subData = (await subRes.json()) as {
-            files?: Array<{ name: string; publicUrl: string }>;
-          };
-          const subFile = Array.isArray(subData.files)
-            ? subData.files.find((x: { name: string }) =>
-                SUBTITLE_EXT.test(x.name),
-              )
-            : undefined;
-          if (subFile?.publicUrl) {
-            episodeToUrl.set(n, subFile.publicUrl);
-          }
-        }
-      }
-
-      const items: R2SubApplyItem[] = Array.from(episodeToUrl.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([episodeNumber, subtitleUrl]) => ({
-          episodeNumber,
-          subtitleUrl,
-        }));
-
-      if (items.length === 0) {
-        setError(
-          "Không tìm thấy file sub nào (sub-1.vtt, tap-1.srt, ...) trong thư mục này.",
-        );
-        return;
-      }
-      onApply(items);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi khi áp dụng");
-    } finally {
-      setLoadingApply(false);
-    }
-  }, [bucket, prefix, onApply, onClose]);
+  const handleSelectImage = (url: string) => {
+    onSelect(url);
+    onClose();
+  };
 
   const handleClose = () => {
-    if (!loadingApply) {
-      setPrefix("");
-      setBucket("");
-      setError(null);
-      onClose();
-    }
+    setPrefix("");
+    setBucket("");
+    setSearch("");
+    setError(null);
+    onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="flex max-h-[85vh] w-full max-w-2xl flex-col gap-0 p-0">
+      <DialogContent className="flex max-h-[90vh] w-full max-w-4xl flex-col gap-0 p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <DialogTitle className="text-lg font-semibold">
-            Gắn R2 sub cho các tập
+            Chọn poster từ R2
           </DialogTitle>
         </div>
 
@@ -231,7 +159,7 @@ export function R2SubtitleFolderPickerModal({
 
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-foreground">
-              Chọn bucket (channel)
+              Chọn bucket
             </span>
             {loading && !bucket ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -282,7 +210,7 @@ export function R2SubtitleFolderPickerModal({
                             pathSegments
                               .slice(0, i + 1)
                               .join("/")
-                              .concat("/"),
+                              .concat("/")
                           )
                         }
                         className="text-muted-foreground hover:text-foreground"
@@ -306,9 +234,25 @@ export function R2SubtitleFolderPickerModal({
 
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium text-foreground">
-                  {prefix
-                    ? "Chọn thư mục phim (hoặc bấm Áp dụng nếu đã chọn đúng thư mục)"
-                    : "Chọn thư mục subtitle"}
+                  Tìm kiếm file trong thư mục
+                </span>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    value={search}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSearch(e.target.value)
+                    }
+                    placeholder="Tên file..."
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  Thư mục
                 </span>
                 {loading ? (
                   <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
@@ -333,27 +277,56 @@ export function R2SubtitleFolderPickerModal({
                   </div>
                 )}
               </div>
-            </>
-          )}
 
-          {isAtSubtitleMovieFolder && (
-            <div className="border-t border-border pt-4">
-              <button
-                type="button"
-                onClick={() => void handleApply()}
-                disabled={loadingApply}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {loadingApply ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Đang quét R2...
-                  </>
-                ) : (
-                  <>Quét R2 và gắn sub cho các tập</>
-                )}
-              </button>
-            </div>
+              {files.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    Ảnh (bấm để chọn làm poster) — tỷ lệ 3:4, 4 ảnh/hàng
+                  </span>
+                  <div className="grid max-h-[28rem] grid-cols-2 gap-2 overflow-auto sm:grid-cols-4">
+                    {files.map((file: FileItem) => (
+                      <button
+                        key={file.key}
+                        type="button"
+                        onClick={() => handleSelectImage(file.publicUrl)}
+                        className="group flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background text-left transition-colors hover:border-primary hover:bg-muted"
+                      >
+                        <div className="relative w-full overflow-hidden bg-muted">
+                          <div
+                            className="relative w-full overflow-hidden"
+                            style={{
+                              aspectRatio: "3/4",
+                              minHeight: 0,
+                            }}
+                          >
+                            <img
+                              src={file.publicUrl}
+                              alt={file.name}
+                              className="block h-full w-full object-cover object-center"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                            <ImageIcon className="size-8 text-white" />
+                          </div>
+                        </div>
+                        <span className="truncate px-2 py-1 text-xs text-muted-foreground">
+                          {file.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!loading && folders.length === 0 && files.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Không có thư mục hoặc ảnh nào trong đường dẫn này. (Chỉ hiển
+                  thị file .jpg, .png, .webp, .gif)
+                </p>
+              )}
+            </>
           )}
         </div>
       </DialogContent>

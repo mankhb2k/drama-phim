@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui";
 import { ProfilePopup } from "@/components/layout/ProfilePopup";
 
 // Genre list: used for visible tabs + overflow dropdown
@@ -168,10 +169,10 @@ export function Header() {
             </Link>
             <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
               <div className="flex h-8.5 w-full items-center overflow-hidden rounded-lg border border-input bg-background px-3 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-                <input
+                <Input
                   type="search"
                   placeholder="Tìm phim, diễn viên..."
-                  className="w-full origin-left scale-[0.75] bg-transparent outline-none"
+                  className="w-full origin-left scale-[0.75] border-0 bg-transparent shadow-none focus-visible:ring-0"
                   style={{ fontSize: "16px" }}
                 />
               </div>
@@ -233,10 +234,10 @@ export function Header() {
               />
             </Link>
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <input
+              <Input
                 type="search"
                 placeholder="Tìm phim, diễn viên..."
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+                className="w-full"
               />
               <button
                 type="button"

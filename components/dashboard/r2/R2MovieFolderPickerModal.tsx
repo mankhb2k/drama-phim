@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronRight, FolderOpen, Loader2 } from "lucide-react";
+import { ChevronRight, FileVideo, FolderOpen, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle, Checkbox } from "@/components/ui";
 
 export type R2ApplyItem = {
   episodeNumber: number;
@@ -10,6 +11,14 @@ export type R2ApplyItem = {
 };
 
 type FolderItem = { name: string; prefix: string };
+type FileItem = { key: string; name: string; publicUrl: string };
+
+const TAP_NAME_REGEX = /^tap-(\d+)(?:\.[^/]*)?$/i;
+
+function tapNumFromName(name: string): number | null {
+  const m = name.match(TAP_NAME_REGEX);
+  return m ? parseInt(m[1], 10) : null;
+}
 
 interface R2MovieFolderPickerModalProps {
   open: boolean;
@@ -28,15 +37,26 @@ export function R2MovieFolderPickerModal({
   const [bucket, setBucket] = useState<string>("");
   const [prefix, setPrefix] = useState<string>("");
   const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [currentFiles, setCurrentFiles] = useState<FileItem[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [loadingApply, setLoadingApply] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pathSegments = prefix ? prefix.replace(/\/+$/, "").split("/") : [];
-  const isAtMovieFolder =
-    pathSegments.length >= 2 &&
-    pathSegments[0] === "video" &&
-    pathSegments.length === 2;
+  const canApplyAtCurrentFolder = pathSegments.length >= 1;
+
+  const navigationFolders = folders.filter(
+    (f: FolderItem) => tapNumFromName(f.name) == null
+  );
+  const tapNFolders = folders.filter(
+    (f: FolderItem) => tapNumFromName(f.name) != null
+  );
+  const tapNFiles = currentFiles.filter(
+    (f: FileItem) => !f.key.endsWith(".keep") && tapNumFromName(f.name) != null
+  );
+  const hasTapNItems = tapNFolders.length > 0 || tapNFiles.length > 0;
+  const selectedCount = selectedKeys.size;
 
   const fetchBuckets = useCallback(async () => {
     setError(null);
@@ -66,6 +86,7 @@ export function R2MovieFolderPickerModal({
     if (!b) return;
     setError(null);
     setLoading(true);
+    setSelectedKeys(new Set());
     try {
       const params = new URLSearchParams();
       params.set("bucket", b);
@@ -73,12 +94,14 @@ export function R2MovieFolderPickerModal({
       const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
       const data = (await res.json()) as {
         folders?: FolderItem[];
+        files?: FileItem[];
         error?: string;
       };
       if (!res.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách");
       }
       setFolders(Array.isArray(data.folders) ? data.folders : []);
+      setCurrentFiles(Array.isArray(data.files) ? data.files : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lỗi tải thư mục");
     } finally {
@@ -115,6 +138,15 @@ export function R2MovieFolderPickerModal({
     setPrefix(pathSegments.slice(0, -1).join("/") + "/");
   };
 
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const handleApply = useCallback(async () => {
     if (!bucket || !prefix) return;
     setError(null);
@@ -125,18 +157,13 @@ export function R2MovieFolderPickerModal({
       params.set("prefix", prefix);
       const res = await fetch(`/api/dashboard/r2/objects?${params.toString()}`);
       const data = (await res.json()) as {
-        files?: Array<{ key: string; name: string; publicUrl: string }>;
-        folders?: Array<{ name: string; prefix: string }>;
+        files?: FileItem[];
+        folders?: FolderItem[];
         error?: string;
       };
       if (!res.ok) {
         throw new Error(data.error ?? "Không thể tải danh sách file");
       }
-
-      const tapNumFromName = (name: string): number | null => {
-        const m = name.match(/^tap-(\d+)(?:\.[^/]*)?$/i);
-        return m ? parseInt(m[1], 10) : null;
-      };
 
       const episodeToFile = new Map<
         number,
@@ -161,15 +188,15 @@ export function R2MovieFolderPickerModal({
           subParams.set("bucket", bucket);
           subParams.set("prefix", folder.prefix);
           const subRes = await fetch(
-            `/api/dashboard/r2/objects?${subParams.toString()}`,
+            `/api/dashboard/r2/objects?${subParams.toString()}`
           );
           const subData = (await subRes.json()) as {
             files?: Array<{ key: string; publicUrl: string }>;
           };
           const firstFile = Array.isArray(subData.files)
-            ? (subData.files.find(
-                (x: { key: string }) => !x.key.endsWith(".keep"),
-              ) ?? subData.files[0])
+            ? subData.files.find(
+                (x: { key: string }) => !x.key.endsWith(".keep")
+              ) ?? subData.files[0]
             : undefined;
           if (firstFile?.key && firstFile?.publicUrl) {
             episodeToFile.set(n, {
@@ -190,7 +217,7 @@ export function R2MovieFolderPickerModal({
 
       if (items.length === 0) {
         setError(
-          "Không tìm thấy file tap-N nào trong thư mục này (tap-1.mp4, tap-2, ...).",
+          "Không tìm thấy file tap-N nào trong thư mục này (tap-1.mp4, tap-2, ...)."
         );
         return;
       }
@@ -203,41 +230,114 @@ export function R2MovieFolderPickerModal({
     }
   }, [bucket, prefix, onApply, onClose]);
 
+  const handleApplySelected = useCallback(async () => {
+    if (!bucket || selectedKeys.size === 0) return;
+    setError(null);
+    const invalidNames: string[] = [];
+    const resolved: Array<{
+      episodeNumber: number;
+      key: string;
+      publicUrl: string;
+    }> = [];
+
+    const filesFiltered = currentFiles.filter(
+      (f: FileItem) => !f.key.endsWith(".keep")
+    );
+    for (const key of selectedKeys) {
+      const file = filesFiltered.find((f: FileItem) => f.key === key);
+      if (file) {
+        const n = tapNumFromName(file.name);
+        if (n == null) {
+          invalidNames.push(file.name);
+        } else {
+          resolved.push({
+            episodeNumber: n,
+            key: file.key,
+            publicUrl: file.publicUrl,
+          });
+        }
+        continue;
+      }
+      const folder = folders.find((f: FolderItem) => f.prefix === key);
+      if (folder) {
+        const n = tapNumFromName(folder.name);
+        if (n == null) {
+          invalidNames.push(folder.name);
+          continue;
+        }
+        const subParams = new URLSearchParams();
+        subParams.set("bucket", bucket);
+        subParams.set("prefix", folder.prefix);
+        const subRes = await fetch(
+          `/api/dashboard/r2/objects?${subParams.toString()}`
+        );
+        const subData = (await subRes.json()) as {
+          files?: Array<{ key: string; publicUrl: string }>;
+        };
+        const firstFile = Array.isArray(subData.files)
+          ? subData.files.find(
+              (x: { key: string }) => !x.key.endsWith(".keep")
+            ) ?? subData.files[0]
+          : undefined;
+        if (firstFile?.key && firstFile?.publicUrl) {
+          resolved.push({
+            episodeNumber: n,
+            key: firstFile.key,
+            publicUrl: firstFile.publicUrl,
+          });
+        }
+      }
+    }
+
+    if (invalidNames.length > 0) {
+      setError(
+        `Định dạng hoặc tên không đúng. Cần tap-N hoặc tap-N.mp4 (vd. tap-1, tap-2.mp4). Không hợp lệ: ${invalidNames.join(
+          ", "
+        )}`
+      );
+      return;
+    }
+    if (resolved.length === 0) {
+      setError("Không có file nào hợp lệ để gắn.");
+      return;
+    }
+
+    setLoadingApply(true);
+    try {
+      const items: R2ApplyItem[] = resolved
+        .sort((a, b) => a.episodeNumber - b.episodeNumber)
+        .map(({ episodeNumber, key, publicUrl }) => ({
+          episodeNumber,
+          objectKey: key,
+          playbackUrl: publicUrl,
+        }));
+      onApply(items);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lỗi khi áp dụng");
+    } finally {
+      setLoadingApply(false);
+    }
+  }, [bucket, currentFiles, folders, onApply, onClose, selectedKeys]);
+
   const handleClose = () => {
     if (!loadingApply) {
       setPrefix("");
       setBucket("");
+      setCurrentFiles([]);
+      setSelectedKeys(new Set());
       setError(null);
       onClose();
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="r2-movie-picker-title"
-    >
-      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-lg">
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="flex max-h-[85vh] w-full max-w-2xl flex-col gap-0 p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2
-            id="r2-movie-picker-title"
-            className="text-lg font-semibold text-foreground"
-          >
+          <DialogTitle className="text-lg font-semibold">
             Gắn R2 cho tất cả tập
-          </h2>
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={loadingApply}
-            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-            aria-label="Đóng"
-          >
-            ×
-          </button>
+          </DialogTitle>
         </div>
 
         <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
@@ -300,7 +400,7 @@ export function R2MovieFolderPickerModal({
                             pathSegments
                               .slice(0, i + 1)
                               .join("/")
-                              .concat("/"),
+                              .concat("/")
                           )
                         }
                         className="text-muted-foreground hover:text-foreground"
@@ -325,7 +425,7 @@ export function R2MovieFolderPickerModal({
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium text-foreground">
                   {prefix
-                    ? "Chọn thư mục phim (hoặc bấm Áp dụng nếu đã chọn đúng thư mục)"
+                    ? "Chọn thư mục phim (bấm vào thư mục để vào bên trong)"
                     : "Chọn thư mục video"}
                 </span>
                 {loading ? (
@@ -335,7 +435,7 @@ export function R2MovieFolderPickerModal({
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {folders.map((folder: FolderItem) => (
+                    {navigationFolders.map((folder: FolderItem) => (
                       <button
                         key={folder.prefix}
                         type="button"
@@ -351,30 +451,96 @@ export function R2MovieFolderPickerModal({
                   </div>
                 )}
               </div>
+
+              {canApplyAtCurrentFolder && !loading && hasTapNItems && (
+                <>
+                  <div className="flex flex-col gap-2 border-t border-border pt-4">
+                    <span className="text-sm font-medium text-foreground">
+                      Tập trong thư mục này (tap-1, tap-2, ...)
+                    </span>
+                    <div className="max-h-64 space-y-1 overflow-auto rounded-md border border-border bg-muted/20 p-2">
+                      {tapNFiles.map((f: FileItem) => {
+                        const ep = tapNumFromName(f.name)!;
+                        const id = f.key;
+                        const checked = selectedKeys.has(id);
+                        return (
+                          <label
+                            key={id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => toggleSelected(id)}
+                            />
+                            <FileVideo className="size-4 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                              {f.name}
+                            </span>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              Tập {ep}
+                            </span>
+                          </label>
+                        );
+                      })}
+                      {tapNFolders.map((folder: FolderItem) => {
+                        const ep = tapNumFromName(folder.name)!;
+                        const id = folder.prefix;
+                        const checked = selectedKeys.has(id);
+                        return (
+                          <label
+                            key={id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => toggleSelected(id)}
+                            />
+                            <FolderOpen className="size-4 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                              {folder.name}
+                            </span>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              Tập {ep}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+                    <button
+                      type="button"
+                      onClick={() => void handleApply()}
+                      disabled={loadingApply}
+                      className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {loadingApply ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Đang quét R2...
+                        </>
+                      ) : (
+                        <>Gắn tất các tập</>
+                      )}
+                    </button>
+                    {selectedCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => void handleApplySelected()}
+                        disabled={loadingApply}
+                        className="inline-flex items-center gap-2 rounded-md border border-primary bg-background px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+                      >
+                        Gắn {selectedCount} tập đã chọn
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )}
-
-          {isAtMovieFolder && (
-            <div className="border-t border-border pt-4">
-              <button
-                type="button"
-                onClick={() => void handleApply()}
-                disabled={loadingApply}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {loadingApply ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Đang quét R2...
-                  </>
-                ) : (
-                  <>Quét R2 và gắn tất cả tập</>
-                )}
-              </button>
-            </div>
-          )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

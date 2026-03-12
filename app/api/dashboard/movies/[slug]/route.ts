@@ -137,7 +137,16 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
     const data = parsed.data;
 
-    const newSlug = data.slug?.trim() || slugify(data.title) || current.slug;
+    const channel = data.channel.trim();
+    const rawSlug = data.slug?.trim();
+    const currentSlugPart = current.slug.startsWith(current.channel + "-")
+      ? current.slug.slice(current.channel.length + 1)
+      : current.slug;
+    const slugPart =
+      rawSlug && rawSlug.length > 0
+        ? slugify(rawSlug)
+        : slugify(data.title) || currentSlugPart || "phim";
+    const newSlug = `${channel}-${slugPart}`;
     const posterUrl =
       data.poster && data.poster !== "" ? data.poster : undefined;
     const backdropUrl =
@@ -156,6 +165,12 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
 
     await prisma.$transaction(async (tx: PrismaTx) => {
+      const episodeIds = await tx.episode
+        .findMany({ where: { movieId: current.id }, select: { id: true } })
+        .then((rows) => rows.map((r: { id: number }) => r.id));
+      if (episodeIds.length > 0) {
+        await tx.server.deleteMany({ where: { episodeId: { in: episodeIds } } });
+      }
       await tx.episode.deleteMany({ where: { movieId: current.id } });
       await tx.movie.update({
         where: { id: current.id },
@@ -228,8 +243,10 @@ export async function PATCH(request: NextRequest, context: Context) {
     return NextResponse.json(movie);
   } catch (error) {
     console.error("[PATCH /api/dashboard/movies/[slug]]", error);
+    const message =
+      error instanceof Error ? error.message : "Lỗi khi cập nhật phim";
     return NextResponse.json(
-      { error: "Lỗi khi cập nhật phim" },
+      { error: message },
       { status: 500 },
     );
   }

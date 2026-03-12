@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Play } from "lucide-react";
+import { normalizeCoverImageUrl } from "@/lib/utils";
 
 export interface MovieCardHeroProps {
   slug: string;
@@ -22,7 +23,7 @@ export function MovieCardHero({
   year,
   episodes,
 }: MovieCardHeroProps) {
-  const backdropUrl = backdrop || undefined;
+  const backdropUrl = normalizeCoverImageUrl(backdrop) ?? undefined;
 
   return (
     <Link href={`/movies/${slug}`} className="group block">

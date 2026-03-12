@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, FolderTree, Search } from "lucide-react";
 import { cn, naturalCompare } from "@/lib/utils";
+import { Input } from "@/components/ui";
 import { useR2ManagerStore, R2FolderItem } from "@/lib/stores/r2-manager-store";
 
 interface FolderTreeSidebarProps {
@@ -134,14 +135,14 @@ export function FolderTreeSidebar({
       <div className="border-b border-border px-2 py-2">
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Input
             type="text"
             value={folderSearch}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setFolderSearch(e.target.value)
             }
             placeholder="Tìm thư mục / prefix..."
-            className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-xs outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+            className="py-1.5 pl-8 pr-2 text-xs"
           />
         </div>
       </div>

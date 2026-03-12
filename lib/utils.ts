@@ -5,6 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const COVER_LEGACY_HOST = "img.harunalegging.shop";
+const COVER_HOST = "cover.dramahd.net";
+
+/**
+ * Chuyển URL ảnh poster/backdrop từ host cũ sang cover.dramahd.net để dùng với next/image.
+ */
+export function normalizeCoverImageUrl(
+  url: string | null | undefined
+): string | undefined {
+  if (!url?.trim()) return undefined;
+  try {
+    const u = new URL(url);
+    if (u.hostname === COVER_LEGACY_HOST) {
+      u.hostname = COVER_HOST;
+      return u.toString();
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 /**
  * So sánh theo kiểu Windows: chữ theo thứ tự, số theo giá trị (file1, file2, file10).
  * Dùng để sắp xếp tên file/folder tự nhiên (natural / alphanumeric sort).

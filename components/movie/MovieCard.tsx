@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Play } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeCoverImageUrl } from "@/lib/utils";
 
 export interface MovieCardLabel {
   name: string;
@@ -35,7 +35,7 @@ export function MovieCard({
   className,
   variant = "default",
 }: MovieCardProps) {
-  const posterUrl = poster || undefined;
+  const posterUrl = normalizeCoverImageUrl(poster) ?? undefined;
 
   return (
     <Link

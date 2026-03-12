@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 import { MovieCard } from "@/components/movie/MovieCard";
 import { MovieCardHero } from "@/components/movie/MovieCardHero";
 import { TongHopSection } from "@/components/home/TongHopSection";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 
 const featuredMovie = {
   slug: "trum-quy-duong",

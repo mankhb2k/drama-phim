@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Info, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useR2ManagerStore, type R2FolderItem } from "@/lib/stores/r2-manager-store";
+import { useConfirmStore } from "@/lib/stores/confirm-store";
 import { CreateFolderDialog } from "@/components/dashboard/r2/CreateFolderDialog";
 import { DeleteFolderConfirm } from "@/components/dashboard/r2/DeleteFolderConfirm";
 import { FolderContextMenu } from "@/components/dashboard/r2/FolderContextMenu";
@@ -512,32 +513,37 @@ export function R2BucketViewClient({
     [bucketSlug, prefixFromUrl, loadObjects],
   );
 
-  const handleDeleteSelected = async () => {
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
+
+  const handleDeleteSelected = () => {
     if (selectedKeys.length === 0) return;
-    const ok = window.confirm(
-      `Xóa ${selectedKeys.length} file đã chọn? Hành động không thể hoàn tác.`,
-    );
-    if (!ok) return;
-    try {
-      setError(null);
-      setLoading(true);
-      const res = await fetch("/api/dashboard/r2/objects/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keys: selectedKeys, bucket: bucketSlug }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Không thể xóa file");
-      }
-      await loadObjects(prefixFromUrl);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa file",
-      );
-    } finally {
-      setLoading(false);
-    }
+    const count = selectedKeys.length;
+    openConfirm({
+      title: "Xóa file",
+      description: `Xóa ${count} file đã chọn? Hành động không thể hoàn tác.`,
+      onConfirm: async () => {
+        try {
+          setError(null);
+          setLoading(true);
+          const res = await fetch("/api/dashboard/r2/objects/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ keys: selectedKeys, bucket: bucketSlug }),
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error ?? "Không thể xóa file");
+          }
+          await loadObjects(prefixFromUrl);
+        } catch (err) {
+          setError(
+            err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa file",
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   return (

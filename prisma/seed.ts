@@ -17,6 +17,31 @@ type PrismaSeed = PrismaClient & {
       update: Record<string, never>;
     }) => Promise<{ id: string; username: string; email: string | null; name: string | null }>;
   };
+  channel: {
+    upsert: (args: {
+      where: { slug: string };
+      update: Record<string, never>;
+      create: { slug: string; name: string };
+    }) => Promise<unknown>;
+  };
+  tag: {
+    createMany: (args: {
+      data: Array<{ slug: string; name: string; order: number }>;
+      skipDuplicates?: boolean;
+    }) => Promise<unknown>;
+  };
+  label: {
+    createMany: (args: {
+      data: Array<{
+        slug: string;
+        name: string;
+        order: number;
+        textColor: string | null;
+        backgroundColor: string | null;
+      }>;
+      skipDuplicates?: boolean;
+    }) => Promise<unknown>;
+  };
 };
 const db = prisma as unknown as PrismaSeed;
 
@@ -44,6 +69,57 @@ async function main() {
   }
   console.log("✅ Genres seeded");
 
+  // --- Channel mặc định ---
+  await db.channel.upsert({
+    where: { slug: "nsh" },
+    update: {},
+    create: {
+      slug: "nsh",
+      name: "NSH",
+    },
+  });
+  console.log("✅ Default channel seeded: nsh");
+
+  // --- Tags mẫu ---
+  await db.tag.createMany({
+    data: [
+      { slug: "phim-hot", name: "Phim hot", order: 1 },
+      { slug: "moi-cap-nhat", name: "Mới cập nhật", order: 2 },
+      { slug: "de-cu", name: "Đề cử", order: 3 },
+    ],
+    skipDuplicates: true,
+  });
+  console.log("✅ Tags seeded");
+
+  // --- Labels mẫu ---
+  await db.label.createMany({
+    data: [
+      {
+        slug: "full-hd",
+        name: "Full HD",
+        order: 1,
+        textColor: null,
+        backgroundColor: null,
+      },
+      {
+        slug: "sub-viet",
+        name: "Sub Việt",
+        order: 2,
+        textColor: null,
+        backgroundColor: null,
+      },
+      {
+        slug: "ban-dep",
+        name: "Bản đẹp",
+        order: 3,
+        textColor: null,
+        backgroundColor: null,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  console.log("✅ Labels seeded");
+
   // --- User (username bắt buộc, email optional) ---
   const adminUsername = "admin";
   const adminEmail = "admin@drama.app";
@@ -62,55 +138,8 @@ async function main() {
     },
   });
   console.log("✅ Admin user created:", admin.username, admin.email ?? "(no email)");
-
-  // --- Movie ---
-  const movie = await prisma.movie.upsert({
-    where: { slug: "phim-test-3-tap" },
-    update: {},
-    create: {
-      slug: "phim-test-3-tap",
-      title: "Phim Test 3 Tập",
-      originalTitle: null,
-      description: "Phim dùng để test hệ thống stream",
-      poster: "https://placehold.co/300x450",
-      backdrop: "https://placehold.co/1280x720",
-      year: 2025,
-      status: "ONGOING",
-      views: 0,
-    },
-  });
-
-  // --- Episodes + Servers ---
-  const episodesData = [
-    { episodeNumber: 1, name: "Tập 1", embedUrl: "https://streamtape.com/v/OJrDM2Rj16T76z/1.mp4" },
-    { episodeNumber: 2, name: "Tập 2", embedUrl: "https://streamtape.com/v/rky62Lp0d2Sbpgb/2.mp4" },
-    { episodeNumber: 3, name: "Tập 3", embedUrl: "https://streamtape.com/v/6oMlG83qVdcokw/3.mp4" },
-  ];
-
-  for (const ep of episodesData) {
-    await prisma.episode.upsert({
-      where: {
-        movieId_episodeNumber: { movieId: movie.id, episodeNumber: ep.episodeNumber },
-      },
-      update: { name: ep.name },
-      create: {
-        movieId: movie.id,
-        episodeNumber: ep.episodeNumber,
-        name: ep.name,
-        slug: null,
-        servers: {
-          create: {
-            name: "StreamTape",
-            embedUrl: ep.embedUrl,
-            priority: 0,
-            isActive: true,
-          },
-        },
-      },
-    });
-  }
-  console.log("✅ Movie + Episodes + Servers seeded");
 }
+
 
 main()
   .catch((e) => {

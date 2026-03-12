@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Database, Plus, RefreshCcw, Search } from "lucide-react";
+import { Input } from "@/components/ui";
 import {
   useR2ManagerStore,
   type SortByName,
@@ -48,11 +49,13 @@ export function R2ActionsToolbar({
       <div className="flex flex-1 flex-wrap items-center gap-2">
         <div className="relative min-w-[11.25rem] max-w-md flex-1">
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
-          <input
-            className="h-8 w-full rounded border border-border bg-background pl-7 pr-2 text-xs outline-none ring-0 placeholder:text-muted-foreground focus:border-primary"
+          <Input
+            className="h-8 w-full rounded border border-border bg-background pl-7 pr-2 text-xs ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder="Tìm theo tên file trong thư mục hiện tại..."
             value={localSearch}
-            onChange={(event) => setLocalSearch(event.target.value)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setLocalSearch(event.target.value)
+            }
           />
         </div>
         {onDataSourceChange && (

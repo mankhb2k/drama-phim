@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LogIn, User, UserPlus, X } from "lucide-react";
+import { LogIn, User, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useAuthPopupStore } from "@/stores/auth-popup";
-import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Button,
+  Input,
+  Label,
+} from "@/components/ui";
 import type { AuthUser } from "@/stores/auth";
 
 export function AuthPopup() {
@@ -31,18 +38,8 @@ export function AuthPopup() {
     if (!isOpen) {
       setJustLoggedIn(false);
       setAuthError("");
-      return;
     }
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onEscape);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onEscape);
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, close]);
+  }, [isOpen]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -95,44 +92,16 @@ export function AuthPopup() {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="auth-popup-title"
-    >
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={close}
-        aria-hidden="true"
-      />
-      <div
-        className="relative w-full max-w-[min(20rem)] rounded-xl border border-border bg-card p-3 shadow-xl sm:max-w-md sm:p-5"
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-center justify-between sm:mb-4">
-          <h2
-            id="auth-popup-title"
-            className="text-base font-semibold text-foreground sm:text-lg"
-          >
-            {justLoggedIn
-              ? "Đăng nhập thành công"
-              : tab === "login"
-                ? "Đăng nhập"
-                : "Đăng ký"}
-          </h2>
-          <button
-            type="button"
-            onClick={close}
-            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="Đóng"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="z-[100] w-full max-w-[min(20rem)] p-3 sm:max-w-md sm:p-5">
+        <DialogTitle className="text-base font-semibold sm:text-lg">
+          {justLoggedIn
+            ? "Đăng nhập thành công"
+            : tab === "login"
+              ? "Đăng nhập"
+              : "Đăng ký"}
+        </DialogTitle>
 
         {justLoggedIn ? (
           <div className="flex flex-col items-center gap-3 py-3 sm:gap-4 sm:py-4">
@@ -190,49 +159,45 @@ export function AuthPopup() {
                 onSubmit={handleLogin}
                 className="mt-3 space-y-2.5 sm:mt-4 sm:space-y-3"
               >
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-foreground sm:mb-2 sm:text-sm">
+                <div className="max-sm:origin-top-left max-sm:scale-y-[0.875] sm:scale-100">
+                  <Label className="mb-2 block text-xs sm:text-sm">
                     Tên đăng nhập hoặc email
-                  </label>
-                  <div className="max-sm:origin-top-left max-sm:scale-y-[0.875] sm:scale-100">
-                    <input
-                      type="text"
-                      name="username"
-                      autoComplete="username"
-                      value={loginForm.username}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setLoginForm((p) => ({
-                          ...p,
-                          username: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ fontSize: "16px" }}
-                      required
-                    />
-                  </div>
+                  </Label>
+                  <Input
+                    type="text"
+                    name="username"
+                    autoComplete="username"
+                    value={loginForm.username}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginForm((p) => ({
+                        ...p,
+                        username: e.target.value,
+                      }))
+                    }
+                    className="px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                    style={{ fontSize: "16px" }}
+                    required
+                  />
                 </div>
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-foreground sm:mb-2 sm:text-sm">
+                <div className="max-sm:origin-top-left max-sm:scale-y-[0.875] sm:scale-100">
+                  <Label className="mb-2 block text-xs sm:text-sm">
                     Mật khẩu
-                  </label>
-                  <div className="max-sm:origin-top-left max-sm:scale-y-[0.875] sm:scale-100">
-                    <input
-                      type="password"
-                      name="password"
-                      autoComplete="current-password"
-                      value={loginForm.password}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setLoginForm((p) => ({
-                          ...p,
-                          password: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ fontSize: "16px" }}
-                      required
-                    />
-                  </div>
+                  </Label>
+                  <Input
+                    type="password"
+                    name="password"
+                    autoComplete="current-password"
+                    value={loginForm.password}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginForm((p) => ({
+                        ...p,
+                        password: e.target.value,
+                      }))
+                    }
+                    className="px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                    style={{ fontSize: "16px" }}
+                    required
+                  />
                 </div>
                 <Button
                   type="submit"
@@ -249,90 +214,82 @@ export function AuthPopup() {
                 onSubmit={handleRegister}
                 className="mt-3 space-y-2.5 sm:mt-4 sm:space-y-3"
               >
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-foreground sm:mb-2 sm:text-sm">
+                <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
+                  <Label className="mb-0.5 block text-xs sm:mb-1 sm:text-sm">
                     Tên đăng nhập *
-                  </label>
-                  <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
-                    <input
-                      type="text"
-                      name="username"
-                      autoComplete="username"
-                      value={registerForm.username}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setRegisterForm((p) => ({
-                          ...p,
-                          username: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ fontSize: "16px" }}
-                      minLength={2}
-                      required
-                    />
-                  </div>
+                  </Label>
+                  <Input
+                    type="text"
+                    name="username"
+                    autoComplete="username"
+                    value={registerForm.username}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setRegisterForm((p) => ({
+                        ...p,
+                        username: e.target.value,
+                      }))
+                    }
+                    className="px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                    style={{ fontSize: "16px" }}
+                    minLength={2}
+                    required
+                  />
                 </div>
-                <div>
-                  <label className="mb-0.5 block text-xs font-medium text-foreground sm:mb-1 sm:text-sm">
+                <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
+                  <Label className="mb-0.5 block text-xs sm:mb-1 sm:text-sm">
                     Mật khẩu *
-                  </label>
-                  <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
-                    <input
-                      type="password"
-                      name="new-password"
-                      autoComplete="new-password"
-                      value={registerForm.password}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setRegisterForm((p) => ({
-                          ...p,
-                          password: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ fontSize: "16px" }}
-                      minLength={6}
-                      required
-                    />
-                  </div>
+                  </Label>
+                  <Input
+                    type="password"
+                    name="new-password"
+                    autoComplete="new-password"
+                    value={registerForm.password}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setRegisterForm((p) => ({
+                        ...p,
+                        password: e.target.value,
+                      }))
+                    }
+                    className="px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                    style={{ fontSize: "16px" }}
+                    minLength={6}
+                    required
+                  />
                 </div>
-                <div>
-                  <label className="mb-0.5 block text-xs font-medium text-foreground sm:mb-1 sm:text-sm">
+                <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
+                  <Label className="mb-0.5 block text-xs sm:mb-1 sm:text-sm">
                     Tên hiển thị
-                  </label>
-                  <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
-                    <input
-                      type="text"
-                      name="name"
-                      autoComplete="name"
-                      value={registerForm.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setRegisterForm((p) => ({ ...p, name: e.target.value }))
-                      }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring  sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ fontSize: "16px" }}
-                    />
-                  </div>
+                  </Label>
+                  <Input
+                    type="text"
+                    name="name"
+                    autoComplete="name"
+                    value={registerForm.name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setRegisterForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                    className="px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                    style={{ fontSize: "16px" }}
+                  />
                 </div>
-                <div>
-                  <label className="mb-0.5 block text-xs font-medium text-foreground sm:mb-1 sm:text-sm">
+                <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
+                  <Label className="mb-0.5 block text-xs sm:mb-1 sm:text-sm">
                     Email (không bắt buộc)
-                  </label>
-                  <div className="max-sm:origin-top-left max-sm:scale-[0.875] sm:scale-100">
-                    <input
-                      type="email"
-                      name="email"
-                      autoComplete="email"
-                      value={registerForm.email}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setRegisterForm((p) => ({
-                          ...p,
-                          email: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-base outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ fontSize: "16px" }}
-                    />
-                  </div>
+                  </Label>
+                  <Input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={registerForm.email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setRegisterForm((p) => ({
+                        ...p,
+                        email: e.target.value,
+                      }))
+                    }
+                    className="px-2.5 py-1.5 text-base sm:px-3 sm:py-2 sm:text-sm"
+                    style={{ fontSize: "16px" }}
+                  />
                 </div>
                 <Button
                   type="submit"
@@ -347,7 +304,7 @@ export function AuthPopup() {
             )}
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

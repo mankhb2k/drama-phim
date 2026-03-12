@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 
