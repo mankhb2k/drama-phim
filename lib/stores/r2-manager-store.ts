@@ -23,8 +23,6 @@ type R2ManagerState = {
   files: R2FileItem[];
   isLoading: boolean;
   selectedKeys: string[];
-  /** Bucket đang chọn (null = dùng bucket mặc định từ env). */
-  currentBucket: string | null;
   /** Sắp xếp theo tên A-Z khi bật. */
   sortByName: SortByName;
   /** Tên hiển thị (tiếng Việt) của thư mục đang xem (prefix hiện tại), từ DB. */
@@ -46,7 +44,6 @@ type R2ManagerActions = {
   clearSelection: () => void;
   /** Chọn tất cả file trong danh sách hiện tại. */
   selectAllFiles: () => void;
-  setCurrentBucket: (bucket: string | null) => void;
   setSortByName: (value: SortByName) => void;
   /** Tăng folderListVersion sau khi đổi tên/di chuyển/xóa thư mục. */
   incrementFolderListVersion: () => void;
@@ -61,18 +58,16 @@ export const useR2ManagerStore = create<R2ManagerStore>((set) => ({
   files: [],
   isLoading: false,
   selectedKeys: [],
-  currentBucket: null,
   sortByName: "a-z",
   currentFolderDisplayName: null,
   folderListVersion: 0,
-  setCurrentBucket: (bucket: string | null) => set({ currentBucket: bucket }),
   setSortByName: (value: SortByName) => set({ sortByName: value }),
   setPrefix: (prefix: string) =>
-    set((state: R2ManagerState) => {
+    set(() => {
       const key = prefix.replace(/^\/+|\/+$/g, "").trim();
       const normalized = key ? `${key}/` : "";
       return {
-        currentPrefix: normalized || prefix,
+        currentPrefix: normalized,
         selectedKeys: [],
         currentFolderDisplayName: null,
       } as Partial<R2ManagerState>;
@@ -83,7 +78,7 @@ export const useR2ManagerStore = create<R2ManagerStore>((set) => ({
     files: R2FileItem[],
     currentFolderDisplayName?: string | null,
   ) =>
-    set((state) => {
+    set(() => {
       const next: Partial<R2ManagerState> = { folders, files };
       if (currentFolderDisplayName !== undefined)
         next.currentFolderDisplayName = currentFolderDisplayName;

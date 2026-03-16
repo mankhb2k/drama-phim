@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Info, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useR2ManagerStore, type R2FolderItem } from "@/lib/stores/r2-manager-store";
 import { useConfirmStore } from "@/lib/stores/confirm-store";
