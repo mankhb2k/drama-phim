@@ -18,6 +18,7 @@ function toPrefixSegment(input: string): string {
   return input
     .trim()
     .toLowerCase()
+    .replace(/\u0111/g, "d") // đ (tiếng Việt) -> d
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9-]+/g, "-")

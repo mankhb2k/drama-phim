@@ -93,6 +93,7 @@ export function getR2Client(): S3Client {
 export function normalizeSegment(input: string): string {
   return input
     .toLowerCase()
+    .replace(/\u0111/g, "d") // đ (Vietnamese) -> d, vì NFD không tách được đ
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9-]+/g, "-")
