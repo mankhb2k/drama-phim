@@ -24,6 +24,12 @@ export function FolderTreeSidebar({
   const currentPrefix = useR2ManagerStore((state) => state.currentPrefix);
   const folders = useR2ManagerStore((state) => state.folders);
   const sortByName = useR2ManagerStore((state) => state.sortByName);
+  const currentFolderDisplayName = useR2ManagerStore(
+    (state) => state.currentFolderDisplayName,
+  );
+  const folderListVersion = useR2ManagerStore(
+    (state) => state.folderListVersion,
+  );
 
   const baseHref =
     bucketSlug !== ""
@@ -38,9 +44,8 @@ export function FolderTreeSidebar({
   };
 
   const isAtRoot = currentPrefix === "";
-  const currentFolderName = isAtRoot
-    ? null
-    : currentPrefix.replace(/\/+$/, "").split("/").pop() ?? null;
+  /** Chỉ hiển thị tên tiếng Việt; không dùng slug. Khi chưa có thì hiện placeholder. */
+  const currentFolderDisplayLabel = currentFolderDisplayName ?? "…";
 
   /** Chỉ hiển thị folder con trực tiếp của prefix hiện tại; áp dụng sắp xếp A-Z. */
   const directChildFolders = useMemo(() => {
@@ -55,7 +60,7 @@ export function FolderTreeSidebar({
         .sort((a: R2FolderItem, b: R2FolderItem) => naturalCompare(a.name, b.name));
     }
     return list;
-  }, [folders, currentPrefix, sortByName]);
+  }, [folders, currentPrefix, sortByName, folderListVersion]);
 
   const folderPrefixesKey = useMemo(
     () => directChildFolders.map((f: R2FolderItem) => f.prefix).join("\0"),
@@ -104,7 +109,7 @@ export function FolderTreeSidebar({
         });
     });
     return () => abort.abort();
-  }, [bucketSlug, folderPrefixesKey]);
+  }, [bucketSlug, folderPrefixesKey, folderListVersion]);
 
   const parentHref = ((): string | null => {
     if (!baseHref || isAtRoot) return null;
@@ -114,7 +119,7 @@ export function FolderTreeSidebar({
     return `${baseHref}/${parentPath}`;
   })();
 
-  /** Nhãn nút back: khi có thư mục cha thì hiển thị tên folder cha (vd. "video"), khi ở cấp 1 thì hiển thị tên bucket. */
+  /** Nhãn nút back: tên segment của thư mục cha (sidebar không có displayName của cha, dùng segment). */
   const parentBackLabel =
     parentHref && !isAtRoot
       ? (() => {
@@ -184,7 +189,7 @@ export function FolderTreeSidebar({
                 )}
               >
                 <ChevronRight className="size-3 text-muted-foreground" />
-                <span>{currentFolderName ?? currentPrefix}</span>
+                <span>{currentFolderDisplayLabel}</span>
               </div>
             </>
           )}

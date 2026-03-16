@@ -14,26 +14,24 @@ import {
 } from "@/components/ui";
 import type { R2FolderItem } from "@/lib/stores/r2-manager-store";
 
-const FOLDER_NAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-function validateFolderName(value: string): string | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return "Vui lòng nhập tên thư mục.";
-  if (/[\s]/.test(trimmed)) return "Tên thư mục không được chứa dấu cách.";
-  if (/[^a-z0-9-]/.test(trimmed)) return "Chỉ dùng chữ thường, số và dấu gạch ngang (-).";
-  if (trimmed.startsWith("-")) return "Tên không được bắt đầu bằng dấu gạch ngang.";
-  if (trimmed.endsWith("-")) return "Tên không được kết thúc bằng dấu gạch ngang.";
-  if (!FOLDER_NAME_REGEX.test(trimmed)) return "Định dạng không hợp lệ (ví dụ: tap-1).";
-  return null;
-}
-
-function normalizeInput(value: string): string {
-  return value
+function toPrefixSegment(input: string): string {
+  return input
+    .trim()
     .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[^a-z0-9-]/g, "-")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function validateFolderDisplayName(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return "Vui lòng nhập tên thư mục.";
+  if (/[\\/]/.test(trimmed)) return "Tên thư mục không được chứa ký tự / hoặc \\.";
+  const seg = toPrefixSegment(trimmed);
+  if (!seg) return "Tên này sau khi tạo prefix sẽ bị rỗng. Hãy nhập tên khác.";
+  return null;
 }
 
 interface RenameFolderDialogProps {
@@ -54,8 +52,8 @@ export function RenameFolderDialog({
   const [value, setValue] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const error = touched ? validateFolderName(value) : null;
-  const normalized = value.trim() === "" ? "" : normalizeInput(value);
+  const error = touched ? validateFolderDisplayName(value) : null;
+  const segment = value.trim() === "" ? "" : toPrefixSegment(value);
 
   useEffect(() => {
     if (open && folder) {
@@ -68,11 +66,11 @@ export function RenameFolderDialog({
     (e: React.FormEvent) => {
       e.preventDefault();
       setTouched(true);
-      const err = validateFolderName(value);
+      const err = validateFolderDisplayName(value);
       if (err || !folder) return;
-      const name = normalizeInput(value);
-      if (!name) return;
-      onSubmit(folder, name);
+      const displayName = value.trim();
+      if (!displayName) return;
+      onSubmit(folder, displayName);
       onClose();
     },
     [value, folder, onSubmit, onClose],
@@ -104,14 +102,14 @@ export function RenameFolderDialog({
                 setValue(e.target.value)
               }
               onBlur={() => setTouched(true)}
-              placeholder="vd: tap-1"
+              placeholder="VD: Tập 1"
               autoComplete="off"
               disabled={isLoading}
             />
             {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
-            {value.trim() !== "" && normalized !== value.trim() && !error && (
+            {value.trim() !== "" && segment && !error && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Sẽ dùng: <span className="font-medium text-foreground">{normalized || "(trống)"}</span>
+                Prefix segment: <span className="font-medium text-foreground">{segment}</span>
               </p>
             )}
           </div>
@@ -126,7 +124,7 @@ export function RenameFolderDialog({
             </Button>
             <Button
               type="submit"
-              disabled={!!error || !normalized || isLoading}
+              disabled={!!error || !segment || isLoading}
             >
               {isLoading ? "Đang lưu…" : "Lưu"}
             </Button>

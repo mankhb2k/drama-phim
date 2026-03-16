@@ -13,32 +13,30 @@ import {
   Label,
 } from "@/components/ui";
 
-const FOLDER_NAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-function validateFolderName(value: string): string | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return "Vui lòng nhập tên thư mục.";
-  if (/[\s]/.test(trimmed)) return "Tên thư mục không được chứa dấu cách.";
-  if (/[^a-z0-9-]/.test(trimmed)) return "Chỉ dùng chữ thường, số và dấu gạch ngang (-).";
-  if (trimmed.startsWith("-")) return "Tên không được bắt đầu bằng dấu gạch ngang.";
-  if (trimmed.endsWith("-")) return "Tên không được kết thúc bằng dấu gạch ngang.";
-  if (!FOLDER_NAME_REGEX.test(trimmed)) return "Định dạng không hợp lệ (ví dụ: tap-1, phim-moi).";
-  return null;
-}
-
-function normalizeInput(value: string): string {
-  return value
+function toPrefixSegment(input: string): string {
+  return input
+    .trim()
     .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[^a-z0-9-]/g, "-")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function validateFolderDisplayName(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return "Vui lòng nhập tên thư mục.";
+  if (/[\\/]/.test(trimmed)) return "Tên thư mục không được chứa ký tự / hoặc \\.";
+  const seg = toPrefixSegment(trimmed);
+  if (!seg) return "Tên này sau khi tạo prefix sẽ bị rỗng. Hãy nhập tên khác.";
+  return null;
 }
 
 interface CreateFolderDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (name: string) => void;
+  onSubmit: (displayName: string) => void;
   isLoading?: boolean;
 }
 
@@ -51,18 +49,18 @@ export function CreateFolderDialog({
   const [value, setValue] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const error = touched ? validateFolderName(value) : null;
-  const normalized = value.trim() === "" ? "" : normalizeInput(value);
+  const error = touched ? validateFolderDisplayName(value) : null;
+  const segment = value.trim() === "" ? "" : toPrefixSegment(value);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       setTouched(true);
-      const err = validateFolderName(value);
+      const err = validateFolderDisplayName(value);
       if (err) return;
-      const name = normalizeInput(value);
-      if (!name) return;
-      onSubmit(name);
+      const displayName = value.trim();
+      if (!displayName) return;
+      onSubmit(displayName);
       setValue("");
       setTouched(false);
     },
@@ -89,7 +87,7 @@ export function CreateFolderDialog({
         <DialogHeader>
           <DialogTitle>Tạo thư mục mới</DialogTitle>
           <DialogDescription>
-            Chữ thường, số và dấu gạch ngang (-). Không dấu cách, không ký tự đặc biệt, không kết thúc bằng &quot;-&quot;.
+            Bạn có thể nhập tiếng Việt có dấu. Hệ thống sẽ tự tạo prefix dạng slug không dấu để lưu trên R2.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -103,16 +101,19 @@ export function CreateFolderDialog({
                 setValue(e.target.value)
               }
               onBlur={() => setTouched(true)}
-              placeholder="vd: tap-1 hoặc phim-moi"
+              placeholder="VD: Phim mới 2026"
               autoComplete="off"
               disabled={isLoading}
             />
             {error && (
               <p className="mt-1 text-xs text-destructive">{error}</p>
             )}
-            {value.trim() !== "" && normalized !== value.trim() && !error && (
+            {value.trim() !== "" && segment && !error && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Sẽ dùng: <span className="font-medium text-foreground">{normalized || "(trống)"}</span>
+                Prefix segment:{" "}
+                <span className="font-medium text-foreground">
+                  {segment}
+                </span>
               </p>
             )}
           </div>
@@ -127,7 +128,7 @@ export function CreateFolderDialog({
             </Button>
             <Button
               type="submit"
-              disabled={!!error || !normalized || isLoading}
+              disabled={!!error || !segment || isLoading}
             >
               {isLoading ? "Đang tạo…" : "Tạo thư mục"}
             </Button>

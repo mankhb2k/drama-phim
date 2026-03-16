@@ -31,6 +31,8 @@ export function FileTable({
   const files = useR2ManagerStore((state) => state.files);
   const selectedKeys = useR2ManagerStore((state) => state.selectedKeys);
   const toggleSelect = useR2ManagerStore((state) => state.toggleSelect);
+  const clearSelection = useR2ManagerStore((state) => state.clearSelection);
+  const selectAllFiles = useR2ManagerStore((state) => state.selectAllFiles);
   const sortByName = useR2ManagerStore((state) => state.sortByName);
 
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
@@ -47,6 +49,8 @@ export function FileTable({
 
   const hasSelection = selectedKeys.length > 0;
   const hasSingleSelection = selectedKeys.length === 1;
+  const allSelected =
+    displayFiles.length > 0 && selectedKeys.length === displayFiles.length;
 
   useEffect(() => {
     if (renamingKey) {
@@ -83,9 +87,20 @@ export function FileTable({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-sm text-muted-foreground">
-          {displayFiles.length} file
-          {selectedKeys.length > 0 ? ` • ${selectedKeys.length} đang chọn` : ""}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>
+            {displayFiles.length} file
+            {selectedKeys.length > 0 ? ` • ${selectedKeys.length} đang chọn` : ""}
+          </span>
+          {displayFiles.length > 0 && (
+            <button
+              type="button"
+              className="rounded border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+              onClick={() => (allSelected ? clearSelection() : selectAllFiles())}
+            >
+              {allSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

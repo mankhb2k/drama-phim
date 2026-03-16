@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight, FileVideo, FolderOpen, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Checkbox } from "@/components/ui";
 
@@ -57,6 +57,28 @@ export function R2MovieFolderPickerModal({
   );
   const hasTapNItems = tapNFolders.length > 0 || tapNFiles.length > 0;
   const selectedCount = selectedKeys.size;
+
+  const allTapIds = useMemo(
+    () => [
+      ...tapNFiles.map((f: FileItem) => f.key),
+      ...tapNFolders.map((f: FolderItem) => f.prefix),
+    ],
+    [tapNFiles, tapNFolders],
+  );
+  const allTapSelected =
+    allTapIds.length > 0 && allTapIds.every((id: string) => selectedKeys.has(id));
+
+  const handleSelectAllTap = useCallback(() => {
+    if (allTapSelected) {
+      setSelectedKeys((prev) => {
+        const next = new Set(prev);
+        allTapIds.forEach((id: string) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedKeys((prev) => new Set([...prev, ...allTapIds]));
+    }
+  }, [allTapIds, allTapSelected]);
 
   const fetchBuckets = useCallback(async () => {
     setError(null);
@@ -455,9 +477,18 @@ export function R2MovieFolderPickerModal({
               {canApplyAtCurrentFolder && !loading && hasTapNItems && (
                 <>
                   <div className="flex flex-col gap-2 border-t border-border pt-4">
-                    <span className="text-sm font-medium text-foreground">
-                      Tập trong thư mục này (tap-1, tap-2, ...)
-                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        Tập trong thư mục này (tap-1, tap-2, ...)
+                      </span>
+                      <button
+                        type="button"
+                        className="rounded border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent"
+                        onClick={handleSelectAllTap}
+                      >
+                        {allTapSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                      </button>
+                    </div>
                     <div className="max-h-64 space-y-1 overflow-auto rounded-md border border-border bg-muted/20 p-2">
                       {tapNFiles.map((f: FileItem) => {
                         const ep = tapNumFromName(f.name)!;

@@ -82,6 +82,8 @@ model Favorite {
 model Movie {
   id            Int     @id @default(autoincrement())
   slug          String  @unique
+  /** Mã phim public, dùng để hiển thị / path, ví dụ 100001, 100002... */
+  publicId      Int     @unique
   channel       String  @default("nsh")
   title         String
   originalTitle String?
@@ -103,6 +105,7 @@ model Movie {
   episodes      Episode[]
   watchHistory  WatchHistory[]
   favorites     Favorite[]
+  r2Files       R2File[]
 
   @@index([slug])
 }
@@ -129,6 +132,7 @@ model Episode {
 
   movie   Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   servers Server[]
+  r2Files R2File[]
 
   @@unique([movieId, episodeNumber])
   @@unique([movieId, watchSlug])
@@ -143,21 +147,25 @@ model Server {
   embedUrl        String // Legacy URL, giữ để tương thích cũ
   sourceType      ServerSourceType @default(EMBED)
   storageProvider StorageProvider  @default(EXTERNAL)
-  objectKey       String?
-  playbackUrl     String?
-  subtitleUrl     String?
-  vastTagUrl      String?
-  mimeType        String?
-  fileSizeBytes   Int?
+  /** Khi server dùng R2, trỏ tới bản ghi R2File tương ứng; null nếu dùng nguồn ngoài */
+  r2FileId       String?
+  objectKey      String?
+  playbackUrl    String?
+  subtitleUrl    String?
+  vastTagUrl     String?
+  mimeType       String?
+  fileSizeBytes  Int?
   durationSeconds Int?
-  priority        Int              @default(0) // server chính load trước
-  isActive        Boolean          @default(true)
+  priority        Int     @default(0) // server chính load trước
+  isActive        Boolean @default(true)
 
   createdAt DateTime @default(now())
 
   episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  r2File  R2File? @relation(fields: [r2FileId], references: [id], onDelete: SetNull)
 
   @@index([episodeId])
+  @@index([r2FileId])
 }
 
 model Genre {
@@ -229,8 +237,18 @@ model R2File {
   updatedAt     DateTime  @updatedAt
 
   folder R2Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  /** File này thuộc phim nào (nếu là video/chung cho một phim cụ thể) */
+  movieId Int?
+  /** File này thuộc tập nào (nếu là video của một tập cụ thể) */
+  episodeId Int?
+
+  movie   Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episode Episode? @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  servers Server[]
 
   @@unique([bucket, key])
   @@index([folderId])
   @@index([bucket, displayName])
+  @@index([movieId])
+  @@index([episodeId])
 }

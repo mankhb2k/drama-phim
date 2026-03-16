@@ -10,11 +10,23 @@ import { DeleteFolderConfirm } from "@/components/dashboard/r2/DeleteFolderConfi
 import { FolderContextMenu } from "@/components/dashboard/r2/FolderContextMenu";
 import { FolderTreeSidebar } from "@/components/dashboard/r2/FolderTreeSidebar";
 import { FileTable } from "@/components/dashboard/r2/FileTable";
+import { MoveFilesDialog } from "@/components/dashboard/r2/MoveFilesDialog";
 import { MoveFolderDialog } from "@/components/dashboard/r2/MoveFolderDialog";
 import { RenameFolderDialog } from "@/components/dashboard/r2/RenameFolderDialog";
 import { R2ActionsToolbar } from "@/components/dashboard/r2/R2ActionsToolbar";
 
 type DataSource = "r2" | "db";
+
+function toPrefixSegment(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 function pathSegmentsToPrefix(segments: string[]): string {
   if (!segments.length) return "";
@@ -42,6 +54,9 @@ export function R2BucketViewClient({
   const setData = useR2ManagerStore((state) => state.setData);
   const setLoading = useR2ManagerStore((state) => state.setLoading);
   const clearSelection = useR2ManagerStore((state) => state.clearSelection);
+  const incrementFolderListVersion = useR2ManagerStore(
+    (state) => state.incrementFolderListVersion,
+  );
   const selectedKeys = useR2ManagerStore((state) => state.selectedKeys);
   const isLoading = useR2ManagerStore((state) => state.isLoading);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +68,7 @@ export function R2BucketViewClient({
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [renameFolderTarget, setRenameFolderTarget] = useState<R2FolderItem | null>(null);
   const [moveFolderTarget, setMoveFolderTarget] = useState<R2FolderItem | null>(null);
+  const [moveFilesDialogOpen, setMoveFilesDialogOpen] = useState(false);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<R2FolderItem | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
@@ -141,7 +157,7 @@ export function R2BucketViewClient({
           }),
         );
         const currentFolders = useR2ManagerStore.getState().folders;
-        setData(currentFolders, files);
+        setData(currentFolders, files, null);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Có lỗi khi tải danh sách từ DB",
@@ -184,13 +200,18 @@ export function R2BucketViewClient({
             lastModified: string;
             publicUrl: string;
           }>;
+          currentFolderDisplayName?: string | null;
         };
         if (!res.ok) {
           throw new Error(json.error ?? "Không thể tải danh sách object từ R2");
         }
         const nextFolders = Array.isArray(json.folders) ? json.folders : [];
         const nextFiles = Array.isArray(json.files) ? json.files : [];
-        setData(nextFolders, nextFiles);
+        setData(
+          nextFolders,
+          nextFiles,
+          json.currentFolderDisplayName ?? null,
+        );
       } catch (err) {
         setError(
           err instanceof Error
@@ -215,8 +236,13 @@ export function R2BucketViewClient({
 
   const handleRenameFolderSubmit = useCallback(
     async (folder: R2FolderItem, newName: string) => {
+      const segment = toPrefixSegment(newName);
+      if (!segment) {
+        setError("Tên mới không hợp lệ.");
+        return;
+      }
       const parentPath = folder.prefix.replace(/\/+$/, "").split("/").slice(0, -1).join("/");
-      const toPrefix = parentPath ? `${parentPath}/${newName}/` : `${newName}/`;
+      const toPrefix = parentPath ? `${parentPath}/${segment}/` : `${segment}/`;
       try {
         setError(null);
         setFolderActionLoading(true);
@@ -226,20 +252,45 @@ export function R2BucketViewClient({
           body: JSON.stringify({
             fromPrefix: folder.prefix,
             toPrefix,
+            displayName: newName.trim(),
             bucket: bucketSlug,
           }),
         });
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          newPrefix?: string;
+          displayName?: string;
+        };
         if (!res.ok) throw new Error(data.error ?? "Không thể đổi tên folder");
         setRenameFolderTarget(null);
-        await loadObjects(prefixFromUrl);
+        incrementFolderListVersion();
+        if (data.newPrefix != null && data.displayName != null) {
+          const state = useR2ManagerStore.getState();
+          const nextFolders = state.folders.map((f: R2FolderItem) =>
+            f.prefix === folder.prefix
+              ? { ...f, prefix: data.newPrefix!, name: data.displayName! }
+              : f,
+          );
+          state.setData(nextFolders, state.files);
+        }
+        // Luôn reload đúng thư mục cha (nơi chứa folder vừa đổi tên) để sidebar cập nhật
+        const parentPrefix = folder.prefix
+          .replace(/\/+$/, "")
+          .split("/")
+          .slice(0, -1)
+          .join("/");
+        const prefixToReload = parentPrefix ? `${parentPrefix}/` : "";
+        await loadObjects(prefixToReload);
+        if (prefixToReload !== prefixFromUrl) {
+          await loadObjects(prefixFromUrl);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi khi đổi tên folder");
       } finally {
         setFolderActionLoading(false);
       }
     },
-    [bucketSlug, prefixFromUrl, loadObjects],
+    [bucketSlug, prefixFromUrl, loadObjects, incrementFolderListVersion],
   );
 
   const handleMoveFolderSubmit = useCallback(
@@ -260,6 +311,7 @@ export function R2BucketViewClient({
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (!res.ok) throw new Error(data.error ?? "Không thể di chuyển folder");
         setMoveFolderTarget(null);
+        incrementFolderListVersion();
         await loadObjects(prefixFromUrl);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi khi di chuyển folder");
@@ -267,7 +319,7 @@ export function R2BucketViewClient({
         setFolderActionLoading(false);
       }
     },
-    [bucketSlug, prefixFromUrl, loadObjects],
+    [bucketSlug, prefixFromUrl, loadObjects, incrementFolderListVersion],
   );
 
   const handleDeleteFolderConfirm = useCallback(
@@ -283,6 +335,7 @@ export function R2BucketViewClient({
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (!res.ok) throw new Error(data.error ?? "Không thể xóa folder");
         setDeleteFolderTarget(null);
+        incrementFolderListVersion();
         await loadObjects(prefixFromUrl);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi khi xóa folder");
@@ -290,7 +343,7 @@ export function R2BucketViewClient({
         setFolderActionLoading(false);
       }
     },
-    [bucketSlug, prefixFromUrl, loadObjects],
+    [bucketSlug, prefixFromUrl, loadObjects, incrementFolderListVersion],
   );
 
   useEffect(() => {
@@ -354,6 +407,7 @@ export function R2BucketViewClient({
           throw new Error(data.error ?? "Không thể tạo thư mục mới");
         }
         setCreateFolderOpen(false);
+        incrementFolderListVersion();
         await loadObjects(prefixFromUrl);
       } catch (err) {
         setError(
@@ -363,7 +417,7 @@ export function R2BucketViewClient({
         setCreateFolderLoading(false);
       }
     },
-    [currentPrefix, bucketSlug, prefixFromUrl, loadObjects],
+    [currentPrefix, bucketSlug, prefixFromUrl, loadObjects, incrementFolderListVersion],
   );
 
   const handleUploadClick = useCallback(() => {
@@ -448,39 +502,43 @@ export function R2BucketViewClient({
     [handleUploadFiles],
   );
 
-  const handleMoveSelected = async () => {
+  const handleMoveSelected = useCallback(() => {
     if (selectedKeys.length === 0) return;
-    const toPrefix = window.prompt(
-      "Nhập prefix thư mục đích (ví dụ: videos/nsh/slug-phim/tap-1/):",
-      currentPrefix,
-    );
-    if (!toPrefix || toPrefix.trim() === "") return;
+    setMoveFilesDialogOpen(true);
+  }, [selectedKeys.length]);
 
-    const trimmedPrefix = toPrefix.trim();
-    try {
-      setError(null);
-      setLoading(true);
-      for (const key of selectedKeys) {
-        const res = await fetch("/api/dashboard/r2/move", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fromKey: key,
-            toPrefix: trimmedPrefix,
-            bucket: bucketSlug,
-          }),
-        });
-        if (!res.ok) throw new Error("Không thể di chuyển một số file");
+  const handleMoveFilesConfirm = useCallback(
+    async (toPrefix: string) => {
+      try {
+        setError(null);
+        setLoading(true);
+        for (const key of selectedKeys) {
+          const res = await fetch("/api/dashboard/r2/move", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fromKey: key,
+              toPrefix: toPrefix.trim().replace(/^\/+/, "").endsWith("/")
+                ? toPrefix.trim()
+                : `${toPrefix.trim()}/`,
+              bucket: bucketSlug,
+            }),
+          });
+          if (!res.ok) throw new Error("Không thể di chuyển một số file");
+        }
+        setMoveFilesDialogOpen(false);
+        await loadObjects(prefixFromUrl);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Có lỗi xảy ra khi di chuyển file",
+        );
+        throw err;
+      } finally {
+        setLoading(false);
       }
-      await loadObjects(prefixFromUrl);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Có lỗi xảy ra khi di chuyển file",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [selectedKeys, bucketSlug, prefixFromUrl, loadObjects],
+  );
 
   const handleRenameSubmit = useCallback(
     async (fromKey: string, newName: string) => {
@@ -644,6 +702,15 @@ export function R2BucketViewClient({
         onClose={() => !folderActionLoading && setDeleteFolderTarget(null)}
         onConfirm={handleDeleteFolderConfirm}
         isLoading={folderActionLoading}
+      />
+      <MoveFilesDialog
+        open={moveFilesDialogOpen}
+        onClose={() => !isLoading && setMoveFilesDialogOpen(false)}
+        sourcePrefix={currentPrefix}
+        selectedKeys={selectedKeys}
+        bucketSlug={bucketSlug}
+        onConfirm={handleMoveFilesConfirm}
+        isLoading={isLoading}
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-background shadow-sm">

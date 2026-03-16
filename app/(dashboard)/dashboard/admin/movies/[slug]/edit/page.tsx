@@ -125,6 +125,9 @@ export default function EditMoviePage() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [labelIds, setLabelIds] = useState<number[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
+  const [r2MoviePickerOpen, setR2MoviePickerOpen] = useState(false);
+  const [r2SubPickerOpen, setR2SubPickerOpen] = useState(false);
+  const [r2PosterPickerOpen, setR2PosterPickerOpen] = useState(false);
   const fetchChannels = useCallback(async () => {
     setChannelLoading(true);
     try {

@@ -68,6 +68,38 @@ const createMovieSchema = z.object({
 
 export type CreateMovieInput = z.infer<typeof createMovieSchema>;
 
+const CHANNEL_BASES: Record<string, number> = {
+  nsh: 100000,
+};
+
+async function generatePublicIdForChannel(channel: string): Promise<number> {
+  const normalizedChannel = channel.trim() || "nsh";
+  const base = CHANNEL_BASES[normalizedChannel] ?? 100000;
+  const maxRange = base + 9999;
+
+  const aggregate = await prisma.movie.aggregate({
+    where: {
+      channel: normalizedChannel,
+      publicId: {
+        gte: base + 1,
+        lte: maxRange,
+      },
+    },
+    _max: {
+      publicId: true,
+    },
+  });
+
+  const currentMax = aggregate._max.publicId ?? base;
+  if (currentMax >= maxRange) {
+    throw new Error(
+      `Đã hết publicId cho channel "${normalizedChannel}" trong dải ${base + 1}-${maxRange}.`,
+    );
+  }
+
+  return currentMax + 1;
+}
+
 /** POST /api/dashboard/movies — Thêm phim mới */
 export async function POST(request: NextRequest) {
   try {
@@ -98,8 +130,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const publicId = await generatePublicIdForChannel(channel);
+
     const movie = await prisma.movie.create({
       data: {
+        publicId,
         slug,
         channel: data.channel.trim(),
         title: data.title.trim(),
