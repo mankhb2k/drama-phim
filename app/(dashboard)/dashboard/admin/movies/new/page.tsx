@@ -548,7 +548,7 @@ export default function DashboardNewMoviePage() {
                 placeholder="Tóm tắt nội dung phim..."
               />
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 sm:col-span-2">
               <Label htmlFor="poster">Poster (URL)</Label>
               <div className="flex gap-2">
                 <Input
@@ -564,7 +564,6 @@ export default function DashboardNewMoviePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
                   onClick={() => setR2PosterPickerOpen(true)}
                   className="shrink-0"
                 >

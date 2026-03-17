@@ -118,7 +118,6 @@ export default function EditMoviePage() {
   const [originalTitle, setOriginalTitle] = useState("");
   const [description, setDescription] = useState("");
   const [poster, setPoster] = useState("");
-  const [backdrop, setBackdrop] = useState("");
   const [year, setYear] = useState("");
   const [status, setStatus] = useState<"ONGOING" | "COMPLETED">("ONGOING");
   const [audioType, setAudioType] = useState<"NONE" | "SUB" | "DUBBED">("NONE");
@@ -190,7 +189,6 @@ export default function EditMoviePage() {
       setOriginalTitle(movie.originalTitle ?? "");
       setDescription(movie.description ?? "");
       setPoster(movie.poster ?? "");
-      setBackdrop(movie.backdrop ?? "");
       setYear(movie.year != null ? String(movie.year) : "");
       setStatus(movie.status);
       setAudioType(movie.audioType ?? "NONE");
@@ -455,9 +453,7 @@ export default function EditMoviePage() {
         originalTitle: originalTitle.trim() || undefined,
         description: description.trim() || undefined,
         poster: poster.trim() || undefined,
-        backdrop: backdrop.trim() || undefined,
-        year:
-          year === "" || Number.isNaN(Number(year)) ? null : Number(year),
+        year: year === "" || Number.isNaN(Number(year)) ? null : Number(year),
         status,
         genreIds,
         tagIds,
@@ -528,10 +524,7 @@ export default function EditMoviePage() {
         );
         const epData = await epRes.json().catch(() => ({}));
         if (!epRes.ok) {
-          addToast(
-            "error",
-            epData.error ?? "Cập nhật danh sách tập thất bại.",
-          );
+          addToast("error", epData.error ?? "Cập nhật danh sách tập thất bại.");
           return;
         }
         setOriginalEpisodes(episodes);
@@ -697,7 +690,7 @@ export default function EditMoviePage() {
                 placeholder="Tóm tắt nội dung phim..."
               />
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 sm:col-span-2">
               <Label htmlFor="poster">Poster (URL)</Label>
               <div className="flex gap-2">
                 <Input
@@ -720,18 +713,6 @@ export default function EditMoviePage() {
                   Chọn từ R2
                 </Button>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="backdrop">Backdrop (URL)</Label>
-              <Input
-                id="backdrop"
-                type="url"
-                value={backdrop}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setBackdrop(e.target.value)
-                }
-                placeholder="https://..."
-              />
             </div>
             <Select
               id="status"

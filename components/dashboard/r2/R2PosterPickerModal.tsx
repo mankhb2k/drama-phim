@@ -24,17 +24,15 @@ function PosterThumb({
   onSelect: () => void;
 }) {
   const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="group flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background text-left transition-colors hover:border-primary hover:bg-muted"
+      className="group mb-2 flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background text-left transition-colors hover:border-primary hover:bg-muted break-inside-avoid-column"
     >
       <div className="relative w-full overflow-hidden bg-muted">
-        <div
-          className="relative w-full overflow-hidden bg-muted"
-          style={{ aspectRatio: "3/4", minHeight: 0 }}
-        >
+        <div className="relative w-full overflow-hidden bg-muted">
           {error ? (
             <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted p-2 text-center">
               <ImageIcon className="size-8 text-muted-foreground" />
@@ -43,15 +41,21 @@ function PosterThumb({
               </span>
             </div>
           ) : (
-            <img
-              src={file.publicUrl}
-              alt={file.name}
-              className="block h-full w-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              onError={() => setError(true)}
-            />
+            <>
+              {!loaded && (
+                <div className="absolute inset-0 animate-pulse bg-muted-foreground/10" />
+              )}
+              <img
+                src={file.publicUrl}
+                alt={file.name}
+                className="block h-auto w-full object-cover object-center"
+                loading="lazy"
+                decoding="async"
+                referrerPolicy="no-referrer"
+                onLoad={() => setLoaded(true)}
+                onError={() => setError(true)}
+              />
+            </>
           )}
         </div>
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
@@ -124,7 +128,7 @@ export function R2PosterPickerModal({
           params.set("search", searchQuery.trim());
         }
         const res = await fetch(
-          `/api/dashboard/r2/objects?${params.toString()}`
+          `/api/dashboard/r2/objects?${params.toString()}`,
         );
         const data = (await res.json()) as {
           folders?: FolderItem[];
@@ -137,7 +141,7 @@ export function R2PosterPickerModal({
         setFolders(Array.isArray(data.folders) ? data.folders : []);
         const rawFiles = Array.isArray(data.files) ? data.files : [];
         const imageFiles = rawFiles.filter(
-          (f: FileItem) => IMAGE_EXTENSIONS.test(f.name) && f.publicUrl
+          (f: FileItem) => IMAGE_EXTENSIONS.test(f.name) && f.publicUrl,
         );
         setFiles(imageFiles);
       } catch (err) {
@@ -146,7 +150,7 @@ export function R2PosterPickerModal({
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -271,7 +275,7 @@ export function R2PosterPickerModal({
                             pathSegments
                               .slice(0, i + 1)
                               .join("/")
-                              .concat("/")
+                              .concat("/"),
                           )
                         }
                         className="text-muted-foreground hover:text-foreground"
@@ -342,16 +346,18 @@ export function R2PosterPickerModal({
               {files.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    Ảnh (bấm để chọn làm poster) — tỷ lệ 3:4, 4 ảnh/hàng
+                    Ảnh (bấm để chọn làm poster)
                   </span>
-                  <div className="grid max-h-[28rem] grid-cols-2 gap-2 overflow-auto sm:grid-cols-4">
-                    {files.map((file: FileItem) => (
-                      <PosterThumb
-                        key={file.key}
-                        file={file}
-                        onSelect={() => handleSelectImage(file.publicUrl)}
-                      />
-                    ))}
+                  <div className="max-h-[28rem] overflow-y-auto overflow-x-hidden">
+                    <div className="columns-3 gap-2 columns-5">
+                      {files.map((file: FileItem) => (
+                        <PosterThumb
+                          key={file.key}
+                          file={file}
+                          onSelect={() => handleSelectImage(file.publicUrl)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
