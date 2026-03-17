@@ -7,9 +7,12 @@ export function cn(...inputs: ClassValue[]) {
 
 const COVER_LEGACY_HOST = "img.harunalegging.shop";
 const COVER_HOST = "cover.dramahd.net";
+const VIDEO_HOST = "video.dramahd.net";
 
 /**
- * Chuyển URL ảnh poster/backdrop từ host cũ sang cover.dramahd.net để dùng với next/image.
+ * Chuyển URL ảnh poster/backdrop sang cover.dramahd.net để dùng với next/image.
+ * - Host cũ (img.harunalegging.shop) → cover.dramahd.net
+ * - video.dramahd.net (ảnh cover lưu nhầm domain video) → cover.dramahd.net
  */
 export function normalizeCoverImageUrl(
   url: string | null | undefined
@@ -17,7 +20,7 @@ export function normalizeCoverImageUrl(
   if (!url?.trim()) return undefined;
   try {
     const u = new URL(url);
-    if (u.hostname === COVER_LEGACY_HOST) {
+    if (u.hostname === COVER_LEGACY_HOST || u.hostname === VIDEO_HOST) {
       u.hostname = COVER_HOST;
       return u.toString();
     }

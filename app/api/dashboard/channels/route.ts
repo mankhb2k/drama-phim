@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_CHANNEL_SLUG } from "@/lib/channel";
 
 const channelSchema = z.object({
   slug: z
@@ -16,14 +18,41 @@ const channelSchema = z.object({
     .default(""),
 });
 
-/** GET /api/dashboard/channels — Danh sách channel (slug + name) */
+/** GET /api/dashboard/channels — Danh sách channel (slug + name + số phim) */
 export async function GET() {
+  const session = await getSession();
+  if (!session || (session.role !== "ADMIN" && session.role !== "EDITOR")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
+    await prisma.channel.upsert({
+      where: { slug: DEFAULT_CHANNEL_SLUG },
+      create: {
+      slug: DEFAULT_CHANNEL_SLUG,
+      name: DEFAULT_CHANNEL_SLUG === "dramahd" ? "DramaHD" : DEFAULT_CHANNEL_SLUG.toUpperCase(),
+    },
+      update: {},
+    });
     const channels = await prisma.channel.findMany({
       orderBy: { slug: "asc" },
       select: { id: true, slug: true, name: true, createdAt: true },
     });
-    return NextResponse.json({ items: channels });
+    const movieCounts = await prisma.movie.groupBy({
+      by: ["channel"],
+      _count: { id: true },
+      where: { channel: { in: channels.map((c: { slug: string }) => c.slug) } },
+    });
+    const countMap = new Map(
+      movieCounts.map((m: { channel: string; _count: { id: number } }) => [
+        m.channel,
+        m._count.id,
+      ]),
+    );
+    const items = channels.map((c: (typeof channels)[number]) => ({
+      ...c,
+      movieCount: countMap.get(c.slug) ?? 0,
+    }));
+    return NextResponse.json({ items });
   } catch (error) {
     console.error("[GET /api/dashboard/channels]", error);
     return NextResponse.json(
@@ -33,8 +62,12 @@ export async function GET() {
   }
 }
 
-/** POST /api/dashboard/channels — Tạo nhanh channel mới */
+/** POST /api/dashboard/channels — Tạo channel mới */
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session || (session.role !== "ADMIN" && session.role !== "EDITOR")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const parsed = channelSchema.safeParse(body);

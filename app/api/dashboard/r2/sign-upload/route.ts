@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       const prefix = (data.prefix ?? "").replace(/^\/+/, "");
       objectKey = buildR2ObjectKey(prefix, data.filename);
     } else {
-      const channel = data.channel ?? "nsh";
+      const channel = data.channel ?? "dramahd";
       const movieSlug = data.movieSlug ?? "";
       const episodeSlug = data.episodeSlug ?? "";
       if (!movieSlug || !episodeSlug) {

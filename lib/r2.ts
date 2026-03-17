@@ -122,7 +122,7 @@ export function buildR2VideoKey(params: {
   episodeSlug: string;
   filename: string;
 }): string {
-  const channel = normalizeSegment(params.channel) || "nsh";
+  const channel = normalizeSegment(params.channel) || "dramahd";
   const movieSlug = normalizeSegment(params.movieSlug);
   const episodeSlug = normalizeSegment(params.episodeSlug);
   const filename = sanitizeFilename(params.filename);

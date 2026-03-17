@@ -7,6 +7,7 @@ import {
   ImageIcon,
   Loader2,
   Search,
+  X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input } from "@/components/ui";
 
@@ -14,6 +15,55 @@ const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif)$/i;
 
 type FolderItem = { name: string; prefix: string };
 type FileItem = { key: string; name: string; publicUrl: string };
+
+function PosterThumb({
+  file,
+  onSelect,
+}: {
+  file: FileItem;
+  onSelect: () => void;
+}) {
+  const [error, setError] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="group flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background text-left transition-colors hover:border-primary hover:bg-muted"
+    >
+      <div className="relative w-full overflow-hidden bg-muted">
+        <div
+          className="relative w-full overflow-hidden bg-muted"
+          style={{ aspectRatio: "3/4", minHeight: 0 }}
+        >
+          {error ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted p-2 text-center">
+              <ImageIcon className="size-8 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">
+                Không tải được
+              </span>
+            </div>
+          ) : (
+            <img
+              src={file.publicUrl}
+              alt={file.name}
+              className="block h-full w-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={() => setError(true)}
+            />
+          )}
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+          <ImageIcon className="size-8 text-white" />
+        </div>
+      </div>
+      <span className="truncate px-2 py-1 text-xs text-muted-foreground">
+        {file.name}
+      </span>
+    </button>
+  );
+}
 
 interface R2PosterPickerModalProps {
   open: boolean;
@@ -143,11 +193,22 @@ export function R2PosterPickerModal({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-4xl flex-col gap-0 p-0">
+      <DialogContent
+        showClose={false}
+        className="flex max-h-[90vh] w-full max-w-4xl flex-col gap-0 p-0"
+      >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <DialogTitle className="text-lg font-semibold">
             Chọn poster từ R2
           </DialogTitle>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Đóng"
+          >
+            <X className="size-3.5" />
+          </button>
         </div>
 
         <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
@@ -285,36 +346,11 @@ export function R2PosterPickerModal({
                   </span>
                   <div className="grid max-h-[28rem] grid-cols-2 gap-2 overflow-auto sm:grid-cols-4">
                     {files.map((file: FileItem) => (
-                      <button
+                      <PosterThumb
                         key={file.key}
-                        type="button"
-                        onClick={() => handleSelectImage(file.publicUrl)}
-                        className="group flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background text-left transition-colors hover:border-primary hover:bg-muted"
-                      >
-                        <div className="relative w-full overflow-hidden bg-muted">
-                          <div
-                            className="relative w-full overflow-hidden"
-                            style={{
-                              aspectRatio: "3/4",
-                              minHeight: 0,
-                            }}
-                          >
-                            <img
-                              src={file.publicUrl}
-                              alt={file.name}
-                              className="block h-full w-full object-cover object-center"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </div>
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                            <ImageIcon className="size-8 text-white" />
-                          </div>
-                        </div>
-                        <span className="truncate px-2 py-1 text-xs text-muted-foreground">
-                          {file.name}
-                        </span>
-                      </button>
+                        file={file}
+                        onSelect={() => handleSelectImage(file.publicUrl)}
+                      />
                     ))}
                   </div>
                 </div>

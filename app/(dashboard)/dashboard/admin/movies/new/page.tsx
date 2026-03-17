@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Trash2, Cloud, Subtitles } from "lucide-react";
-import { Button, Select, Input, Textarea, Label, Checkbox, type SelectOption } from "@/components/ui";
+import {
+  Button,
+  Select,
+  Input,
+  Textarea,
+  Label,
+  Checkbox,
+  type SelectOption,
+} from "@/components/ui";
 import {
   R2MovieFolderPickerModal,
   type R2ApplyItem,
@@ -57,9 +65,9 @@ export default function DashboardNewMoviePage() {
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
-  const [channel, setChannel] = useState("nsh");
+  const [channel, setChannel] = useState("dramahd");
   const [channelOptions, setChannelOptions] = useState<SelectOption[]>([
-    { value: "nsh", label: "nsh" },
+    { value: "dramahd", label: "DramaHD" },
   ]);
   const [channelLoading, setChannelLoading] = useState(false);
   const [originalTitle, setOriginalTitle] = useState("");
@@ -94,7 +102,9 @@ export default function DashboardNewMoviePage() {
   const fetchChannels = useCallback(async () => {
     setChannelLoading(true);
     try {
-      const res = await fetch("/api/dashboard/channels");
+      const res = await fetch("/api/dashboard/channels", {
+        credentials: "include",
+      });
       if (!res.ok) return;
       const json = (await res.json()) as {
         items?: Array<{ slug: string; name: string }>;
@@ -108,7 +118,7 @@ export default function DashboardNewMoviePage() {
           })),
         );
         if (!channel) {
-          setChannel(items[0]?.slug ?? "nsh");
+          setChannel(items[0]?.slug ?? "dramahd");
         }
       }
     } catch {
@@ -122,77 +132,6 @@ export default function DashboardNewMoviePage() {
     fetchOptions();
     fetchChannels();
   }, [fetchOptions, fetchChannels]);
-
-  const handleQuickCreateChannel = async () => {
-    const slugInput = window.prompt("Nhập slug channel (vd: nsh, drama-hd):", "");
-    const slugValue = slugInput?.trim();
-    if (!slugValue) return;
-    try {
-      const res = await fetch("/api/dashboard/channels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: slugValue }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        addToast("error", data.error ?? "Không tạo được channel");
-        return;
-      }
-      const created = (await res.json()) as { slug: string; name: string };
-      const option: SelectOption = {
-        value: created.slug,
-        label: created.name || created.slug,
-      };
-      setChannelOptions((prev) => {
-        const exists = prev.some(
-          (c: SelectOption) => c.value === option.value,
-        );
-        return exists ? prev : [...prev, option];
-      });
-      setChannel(created.slug);
-      addToast("success", `Đã tạo channel "${created.slug}"`);
-    } catch {
-      addToast("error", "Không tạo được channel mới");
-    }
-  };
-
-  const handleDeleteCurrentChannel = async () => {
-    if (!channel || channel === "nsh") {
-      addToast(
-        "error",
-        "Không thể xóa channel mặc định hoặc khi chưa chọn channel.",
-      );
-      return;
-    }
-    const ok = window.confirm(
-      `Bạn có chắc chắn muốn xóa channel "${channel}"?\nCác phim đang dùng sẽ được chuyển về channel \"nsh\".`,
-    );
-    if (!ok) return;
-    try {
-      const res = await fetch(
-        `/api/dashboard/channels/${encodeURIComponent(
-          channel,
-        )}?force=1`,
-        { method: "DELETE" },
-      );
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      if (!res.ok) {
-        addToast("error", data.error ?? "Không xóa được channel");
-        return;
-      }
-      setChannelOptions((prev) =>
-        prev.filter((c: SelectOption) => c.value !== channel),
-      );
-      setChannel("nsh");
-      addToast("success", "Đã xóa channel và chuyển phim về 'nsh'");
-    } catch {
-      addToast("error", "Không xóa được channel");
-    }
-  };
 
   const toggleGenre = (id: number) => {
     setGenreIds((prev) =>
@@ -396,7 +335,7 @@ export default function DashboardNewMoviePage() {
       const payload = {
         title: title.trim(),
         slug: slug.trim() || undefined,
-        channel: channel.trim() || "nsh",
+        channel: channel.trim() || "dramahd",
         audioType,
         originalTitle: originalTitle.trim() || undefined,
         description: description.trim() || undefined,
@@ -450,7 +389,7 @@ export default function DashboardNewMoviePage() {
       setSubmitSuccess(true);
       setTitle("");
       setSlug("");
-      setChannel("nsh");
+      setChannel("dramahd");
       setOriginalTitle("");
       setDescription("");
       setPoster("");
@@ -540,9 +479,7 @@ export default function DashboardNewMoviePage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="slug">
-                Slug (để trống = tự tạo từ tiêu đề)
-              </Label>
+              <Label htmlFor="slug">Slug (để trống = tự tạo từ tiêu đề)</Label>
               <Input
                 id="slug"
                 type="text"
@@ -554,38 +491,24 @@ export default function DashboardNewMoviePage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="channel">Channel</Label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select
-                    id="channel"
-                    label="Channel"
-                    options={channelOptions}
-                    value={channel}
-                    onChange={(value: string) => setChannel(value)}
-                    placeholder={channelLoading ? "Đang tải..." : "Chọn channel"}
-                    data-testid="channel-select"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleQuickCreateChannel}
-                  >
-                    Thêm
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDeleteCurrentChannel}
-                  >
-                    Xóa
-                  </Button>
-                </div>
-              </div>
+              <Select
+                id="channel"
+                label="Channel"
+                options={channelOptions}
+                value={channel}
+                onChange={(value: string) => setChannel(value)}
+                placeholder={channelLoading ? "Đang tải..." : "Chọn channel"}
+                data-testid="channel-select"
+              />
+              <p className="text-xs text-muted-foreground">
+                Quản lý channel tại{" "}
+                <Link
+                  href="/dashboard/admin/channel"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Dashboard → Channel
+                </Link>
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="year">Năm</Label>
@@ -890,7 +813,9 @@ export default function DashboardNewMoviePage() {
                           <Input
                             type="text"
                             value={srv.name}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) =>
                               updateServer(
                                 ep.id,
                                 srv.id,
@@ -904,7 +829,9 @@ export default function DashboardNewMoviePage() {
                           <Input
                             type="url"
                             value={srv.embedUrl}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) =>
                               updateServer(
                                 ep.id,
                                 srv.id,

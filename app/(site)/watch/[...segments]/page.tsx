@@ -95,7 +95,7 @@ async function handleLegacySlug(slug: string) {
     select: { channel: true },
   });
   if (!movie) notFound();
-  const channel = movie.channel || "nsh";
+  const channel = movie.channel || "dramahd";
   const episodeSlug = `tap-${episodeNumber}`;
   permanentRedirect(buildWatchHrefTree(channel, movieSlug, episodeSlug));
 }
@@ -153,16 +153,15 @@ async function handleTreePath(parts: string[]) {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link
           href={`/movies/${movie.slug}`}
-          className="inline-flex items-center gap-1.5 font-medium text-foreground transition-colors hover:text-primary"
+          className="inline-flex max-w-[60%] items-center gap-1.5 font-medium text-foreground transition-colors hover:text-primary sm:max-w-[70%] md:max-w-[50%]"
         >
           <ArrowLeft className="size-4" />
-          {movie.title}
+          <span className="truncate" title={movie.title}>
+            {movie.title}
+          </span>
         </Link>
         <span aria-hidden>/</span>
-        <span>
-          Tập {currentEpisode.episodeNumber}
-          {currentEpisode.name ? ` — ${currentEpisode.name}` : ""}
-        </span>
+        <span>Tập {currentEpisode.episodeNumber}</span>
       </div>
 
       <div className="flex min-w-0 max-w-full flex-col items-center gap-2">

@@ -40,7 +40,7 @@ async function main() {
     if (!movie.channel) {
       await prisma.movie.update({
         where: { id: movie.id },
-        data: { channel: "nsh" },
+        data: { channel: "dramahd" },
       });
     }
 

@@ -22,7 +22,7 @@ export function EpisodeSwitcher({
   movieSlug,
   movieTitle,
   currentEpisodeNumber,
-  channel = "nsh",
+  channel = "dramahd",
   episodes,
   className,
 }: EpisodeSwitcherProps) {

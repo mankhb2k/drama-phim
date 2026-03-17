@@ -71,14 +71,14 @@ async function main() {
 
   // --- Channel mặc định ---
   await db.channel.upsert({
-    where: { slug: "nsh" },
+    where: { slug: "dramahd" },
     update: {},
     create: {
-      slug: "nsh",
-      name: "NSH",
+      slug: "dramahd",
+      name: "DramaHD",
     },
   });
-  console.log("✅ Default channel seeded: nsh");
+  console.log("✅ Default channel seeded: dramahd");
 
   // --- Tags mẫu ---
   await db.tag.createMany({

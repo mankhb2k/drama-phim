@@ -10,12 +10,14 @@ import {
   Users,
   Database,
   ExternalLink,
+  Tv,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/dashboard/admin/movies", label: "Danh sách phim", icon: Film },
+  { href: "/dashboard/admin/channel", label: "Channel", icon: Tv },
   { href: "/dashboard/admin/genres", label: "Thể loại", icon: FolderOpen },
   { href: "/dashboard/admin/tags", label: "Tag", icon: Tags },
   { href: "/dashboard/admin/users", label: "Quản lý user", icon: Users },
@@ -48,7 +50,7 @@ export function DashboardSidebar() {
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
               <Icon className="size-5 shrink-0" />

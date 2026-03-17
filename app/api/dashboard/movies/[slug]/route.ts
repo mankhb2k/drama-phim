@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { normalizeChannel } from "@/lib/channel";
 import { slugify } from "@/lib/slug";
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -42,7 +43,11 @@ const episodeSchema = z.object({
 const updateMovieSchema = z.object({
   title: z.string().min(1, "Tiêu đề không được để trống"),
   slug: z.string().min(1).optional(),
-  channel: z.string().min(1).default("nsh"),
+  channel: z
+    .string()
+    .optional()
+    .default("dramahd")
+    .transform((s) => (s?.trim() || "dramahd")),
   audioType: z.enum(["NONE", "SUB", "DUBBED"]).optional().default("NONE"),
   originalTitle: z.string().optional(),
   description: z.string().optional(),
@@ -137,7 +142,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
     const data = parsed.data;
 
-    const channel = data.channel.trim();
+    const channel = normalizeChannel(data.channel);
     const rawSlug = data.slug?.trim();
     const currentSlugPart = current.slug.startsWith(current.channel + "-")
       ? current.slug.slice(current.channel.length + 1)
@@ -176,7 +181,7 @@ export async function PATCH(request: NextRequest, context: Context) {
         where: { id: current.id },
         data: {
           slug: newSlug,
-          channel: data.channel.trim(),
+          channel,
           title: data.title.trim(),
           originalTitle: data.originalTitle?.trim() || null,
           description: data.description?.trim() || null,

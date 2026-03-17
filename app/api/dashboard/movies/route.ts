@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
+import { DEFAULT_CHANNEL_SLUG, normalizeChannel } from "@/lib/channel";
 
 const serverSchema = z
   .object({
@@ -40,7 +41,11 @@ const episodeSchema = z.object({
 const createMovieSchema = z.object({
   title: z.string().min(1, "Tiêu đề không được để trống"),
   slug: z.string().min(1).optional(),
-  channel: z.string().min(1).default("nsh"),
+  channel: z
+    .string()
+    .optional()
+    .default("dramahd")
+    .transform((s) => (s?.trim() || "dramahd")),
   audioType: z.enum(["NONE", "SUB", "DUBBED"]).optional().default("NONE"),
   originalTitle: z.string().optional(),
   description: z.string().optional(),
@@ -69,11 +74,12 @@ const createMovieSchema = z.object({
 export type CreateMovieInput = z.infer<typeof createMovieSchema>;
 
 const CHANNEL_BASES: Record<string, number> = {
+  dramahd: 100000,
   nsh: 100000,
 };
 
 async function generatePublicIdForChannel(channel: string): Promise<number> {
-  const normalizedChannel = channel.trim() || "nsh";
+  const normalizedChannel = channel.trim() || DEFAULT_CHANNEL_SLUG;
   const base = CHANNEL_BASES[normalizedChannel] ?? 100000;
   const maxRange = base + 9999;
 
@@ -113,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
     const data = parsed.data;
 
-    const channel = data.channel.trim();
+    const channel = normalizeChannel(data.channel);
     const slugPart =
       slugify(data.slug?.trim() || data.title || "") || `phim-${Date.now()}`;
     const slug = `${channel}-${slugPart}`;
@@ -136,7 +142,7 @@ export async function POST(request: NextRequest) {
       data: {
         publicId,
         slug,
-        channel: data.channel.trim(),
+        channel,
         title: data.title.trim(),
         originalTitle: data.originalTitle?.trim() || null,
         description: data.description?.trim() || null,

@@ -31,7 +31,7 @@ export function buildWatchHrefTree(
 export function buildWatchHref(
   movieSlug: string,
   episodeNumber: number,
-  channel = "nsh",
+  channel = "dramahd",
   episodeSlug?: string,
 ): string {
   const resolvedEpisodeSlug = episodeSlug ?? buildEpisodeSlug(episodeNumber);

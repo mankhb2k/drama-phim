@@ -81,11 +81,12 @@ export default async function MovieDetailPage({
   if (!movie) notFound();
 
   const firstEpisode = movie.episodes[0];
+  const channel = movie.channel || "dramahd";
   const watchHref = firstEpisode
     ? buildWatchHref(
         movie.slug,
         firstEpisode.episodeNumber,
-        "nsh",
+        channel,
         `tap-${firstEpisode.episodeNumber}`,
       )
     : "#";
@@ -199,7 +200,7 @@ export default async function MovieDetailPage({
                 href={buildWatchHref(
                   movie.slug,
                   ep.episodeNumber,
-                  "nsh",
+                  channel,
                   `tap-${ep.episodeNumber}`,
                 )}
                 className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"

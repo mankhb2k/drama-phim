@@ -6,6 +6,7 @@ import {
   Users,
   PlusCircle,
   ArrowRight,
+  Tv,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui";
@@ -18,18 +19,27 @@ export default async function DashboardOverviewPage() {
       ? (prisma as { tag: { count: () => Promise<number> } }).tag.count()
       : Promise.resolve(0);
 
+  const channelCountPromise =
+    "channel" in prisma &&
+    typeof (prisma as { channel?: { count: () => Promise<number> } }).channel
+      ?.count === "function"
+      ? (prisma as { channel: { count: () => Promise<number> } }).channel.count()
+      : Promise.resolve(0);
+
   const results = await Promise.allSettled([
     prisma.movie.count(),
     prisma.genre.count(),
     tagCountPromise,
+    channelCountPromise,
     prisma.episode.count(),
     prisma.user.count(),
   ]);
   const movieCount = results[0].status === "fulfilled" ? results[0].value : 0;
   const genreCount = results[1].status === "fulfilled" ? results[1].value : 0;
   const tagCount = results[2].status === "fulfilled" ? results[2].value : 0;
-  const episodeCount = results[3].status === "fulfilled" ? results[3].value : 0;
-  const userCount = results[4].status === "fulfilled" ? results[4].value : 0;
+  const channelCount = results[3].status === "fulfilled" ? results[3].value : 0;
+  const episodeCount = results[4].status === "fulfilled" ? results[4].value : 0;
+  const userCount = results[5].status === "fulfilled" ? results[5].value : 0;
 
   const cards = [
     {
@@ -52,6 +62,13 @@ export default async function DashboardOverviewPage() {
       href: "/dashboard/admin/tags",
       icon: Tags,
       desc: "Quản lý tag",
+    },
+    {
+      title: "Channel",
+      value: channelCount,
+      href: "/dashboard/admin/channel",
+      icon: Tv,
+      desc: "Quản lý channel",
     },
     {
       title: "Tổng số tập",

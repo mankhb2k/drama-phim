@@ -84,7 +84,7 @@ model Movie {
   slug          String  @unique
   /** Mã phim public, dùng để hiển thị / path, ví dụ 100001, 100002... */
   publicId      Int     @unique
-  channel       String  @default("nsh")
+  channel       String  @default("dramahd")
   title         String
   originalTitle String?
   description   String?
