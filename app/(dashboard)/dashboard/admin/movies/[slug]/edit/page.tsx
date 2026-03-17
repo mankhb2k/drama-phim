@@ -118,6 +118,7 @@ export default function EditMoviePage() {
   const [originalTitle, setOriginalTitle] = useState("");
   const [description, setDescription] = useState("");
   const [poster, setPoster] = useState("");
+  const [backdrop, setBackdrop] = useState("");
   const [year, setYear] = useState("");
   const [status, setStatus] = useState<"ONGOING" | "COMPLETED">("ONGOING");
   const [audioType, setAudioType] = useState<"NONE" | "SUB" | "DUBBED">("NONE");
@@ -125,6 +126,10 @@ export default function EditMoviePage() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [labelIds, setLabelIds] = useState<number[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
+  const [originalEpisodes, setOriginalEpisodes] = useState<EpisodeRow[] | null>(
+    null,
+  );
+  const [movieId, setMovieId] = useState<number | null>(null);
   const [r2MoviePickerOpen, setR2MoviePickerOpen] = useState(false);
   const [r2SubPickerOpen, setR2SubPickerOpen] = useState(false);
   const [r2PosterPickerOpen, setR2PosterPickerOpen] = useState(false);
@@ -173,6 +178,7 @@ export default function EditMoviePage() {
       if (tagsRes.ok) setTags(await tagsRes.json());
       if (labelsRes.ok) setLabels(await labelsRes.json());
 
+      setMovieId(movie.id);
       setTitle(movie.title);
       const ch = movie.channel ?? "dramahd";
       setChannel(ch);
@@ -184,14 +190,15 @@ export default function EditMoviePage() {
       setOriginalTitle(movie.originalTitle ?? "");
       setDescription(movie.description ?? "");
       setPoster(movie.poster ?? "");
+      setBackdrop(movie.backdrop ?? "");
       setYear(movie.year != null ? String(movie.year) : "");
       setStatus(movie.status);
       setAudioType(movie.audioType ?? "NONE");
       setGenreIds(movie.genres.map((g: Genre) => g.id));
       setTagIds(movie.tags.map((t: Tag) => t.id));
       setLabelIds((movie.labels ?? []).map((l: { id: number }) => l.id));
-      setEpisodes(
-        movie.episodes.map((ep: (typeof movie.episodes)[number]) => ({
+      const mappedEpisodes: EpisodeRow[] = movie.episodes.map(
+        (ep: (typeof movie.episodes)[number]) => ({
           id: genId(),
           episodeNumber: ep.episodeNumber,
           name: ep.name ?? "",
@@ -211,8 +218,10 @@ export default function EditMoviePage() {
             priority: s.priority,
             isActive: s.isActive,
           })),
-        })),
+        }),
       );
+      setEpisodes(mappedEpisodes);
+      setOriginalEpisodes(mappedEpisodes);
     } finally {
       setLoading(false);
     }
@@ -446,36 +455,17 @@ export default function EditMoviePage() {
         originalTitle: originalTitle.trim() || undefined,
         description: description.trim() || undefined,
         poster: poster.trim() || undefined,
-        year: year === "" ? null : Number(year),
+        backdrop: backdrop.trim() || undefined,
+        year:
+          year === "" || Number.isNaN(Number(year)) ? null : Number(year),
         status,
         genreIds,
         tagIds,
         labelIds,
-        episodes: episodes.map((ep: EpisodeRow) => ({
-          episodeNumber: ep.episodeNumber,
-          name: ep.name.trim() || undefined,
-          subtitleUrl: ep.subtitleUrl?.trim() || undefined,
-          servers: ep.servers
-            .filter(
-              (s: ServerRow) =>
-                s.name.trim() && (s.playbackUrl.trim() || s.embedUrl.trim()),
-            )
-            .map((s: ServerRow, i: number) => ({
-              name: s.name.trim(),
-              embedUrl: s.embedUrl.trim(),
-              playbackUrl: s.playbackUrl.trim() || undefined,
-              objectKey: s.objectKey.trim() || undefined,
-              sourceType: s.sourceType,
-              storageProvider: s.storageProvider,
-              subtitleUrl: s.subtitleUrl.trim() || undefined,
-              vastTagUrl: s.vastTagUrl.trim() || undefined,
-              mimeType: s.mimeType.trim() || undefined,
-              fileSizeBytes: s.fileSizeBytes ?? undefined,
-              priority: i,
-              isActive: s.isActive,
-            })),
-        })),
       };
+      const hasEpisodesChanged =
+        originalEpisodes != null &&
+        JSON.stringify(originalEpisodes) !== JSON.stringify(episodes);
       const res = await fetch(
         `/api/dashboard/movies/${encodeURIComponent(slug)}`,
         {
@@ -489,6 +479,64 @@ export default function EditMoviePage() {
         addToast("error", data.error ?? "Cập nhật thất bại.");
         return;
       }
+
+      // Nếu có thay đổi tập/server thì gọi endpoint riêng để rebuild
+      if (hasEpisodesChanged) {
+        if (!movieId) {
+          addToast(
+            "error",
+            "Không xác định được ID phim để cập nhật danh sách tập.",
+          );
+          return;
+        }
+        const episodesPayload = {
+          movieId,
+          episodes: episodes.map((ep: EpisodeRow) => ({
+            episodeNumber: ep.episodeNumber,
+            name: ep.name.trim() || undefined,
+            subtitleUrl: ep.subtitleUrl?.trim() || undefined,
+            servers: ep.servers
+              .filter(
+                (s: ServerRow) =>
+                  s.name.trim() && (s.playbackUrl.trim() || s.embedUrl.trim()),
+              )
+              .map((s: ServerRow, i: number) => ({
+                name: s.name.trim(),
+                embedUrl: s.embedUrl.trim(),
+                playbackUrl: s.playbackUrl.trim() || undefined,
+                objectKey: s.objectKey.trim() || undefined,
+                r2FileId: undefined,
+                sourceType: s.sourceType,
+                storageProvider: s.storageProvider,
+                subtitleUrl: s.subtitleUrl.trim() || undefined,
+                vastTagUrl: s.vastTagUrl.trim() || undefined,
+                mimeType: s.mimeType.trim() || undefined,
+                fileSizeBytes: s.fileSizeBytes ?? undefined,
+                durationSeconds: undefined,
+                priority: i,
+                isActive: s.isActive,
+              })),
+          })),
+        };
+        const epRes = await fetch(
+          `/api/dashboard/movies/${encodeURIComponent(slug)}/episodes`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(episodesPayload),
+          },
+        );
+        const epData = await epRes.json().catch(() => ({}));
+        if (!epRes.ok) {
+          addToast(
+            "error",
+            epData.error ?? "Cập nhật danh sách tập thất bại.",
+          );
+          return;
+        }
+        setOriginalEpisodes(episodes);
+      }
+
       addToast("success", "Cập nhật phim thành công.");
       if (data.slug && data.slug !== slug) {
         router.replace(`/dashboard/admin/movies/${data.slug}/edit`);
@@ -672,6 +720,18 @@ export default function EditMoviePage() {
                   Chọn từ R2
                 </Button>
               </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="backdrop">Backdrop (URL)</Label>
+              <Input
+                id="backdrop"
+                type="url"
+                value={backdrop}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setBackdrop(e.target.value)
+                }
+                placeholder="https://..."
+              />
             </div>
             <Select
               id="status"
