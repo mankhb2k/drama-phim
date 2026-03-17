@@ -142,6 +142,29 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
     const data = parsed.data;
 
+    // Kiểm tra trùng số tập để tránh lỗi unique constraint (movieId, episodeNumber)
+    if (data.episodes && data.episodes.length > 0) {
+      const seenNumbers = new Set<number>();
+      const duplicatedNumbers = new Set<number>();
+      for (const ep of data.episodes) {
+        const num = ep.episodeNumber;
+        if (seenNumbers.has(num)) {
+          duplicatedNumbers.add(num);
+        } else {
+          seenNumbers.add(num);
+        }
+      }
+      if (duplicatedNumbers.size > 0) {
+        return NextResponse.json(
+          {
+            error: "Số tập bị trùng. Mỗi tập phải có số khác nhau.",
+            duplicatedEpisodeNumbers: Array.from(duplicatedNumbers),
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const channel = normalizeChannel(data.channel);
     const rawSlug = data.slug?.trim();
     const currentSlugPart = current.slug.startsWith(current.channel + "-")
@@ -170,13 +193,13 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
 
     await prisma.$transaction(async (tx: PrismaTx) => {
-      const episodeIds = await tx.episode
-        .findMany({ where: { movieId: current.id }, select: { id: true } })
-        .then((rows) => rows.map((r: { id: number }) => r.id));
-      if (episodeIds.length > 0) {
-        await tx.server.deleteMany({ where: { episodeId: { in: episodeIds } } });
-      }
+      // 1. Xóa server trước (theo episode thuộc phim này) để tránh vi phạm FK khi xóa episode
+      await tx.server.deleteMany({
+        where: { episode: { movieId: current.id } },
+      });
+      // 2. Xóa toàn bộ tập của phim
       await tx.episode.deleteMany({ where: { movieId: current.id } });
+      // 3. Cập nhật thông tin phim (không nested episodes để tránh lỗi Server_episodeId_fkey)
       await tx.movie.update({
         where: { id: current.id },
         data: {
@@ -193,43 +216,40 @@ export async function PATCH(request: NextRequest, context: Context) {
           genres: { set: data.genreIds.map((id: number) => ({ id })) },
           tags: { set: data.tagIds.map((id: number) => ({ id })) },
           labels: { set: data.labelIds.map((id: number) => ({ id })) },
-          episodes:
-            data.episodes.length > 0
-              ? {
-                  create: data.episodes.map((ep: (typeof data.episodes)[number]) => ({
-                    episodeNumber: ep.episodeNumber,
-                    watchSlug: `tap-${ep.episodeNumber}`,
-                    name: ep.name?.trim() || `Tập ${ep.episodeNumber}`,
-                    subtitleUrl: ep.subtitleUrl?.trim() || null,
-                    servers:
-                      ep.servers.length > 0
-                        ? {
-                            create: ep.servers.map((s: (typeof ep.servers)[number], i: number) => ({
-                              sourceType: s.sourceType,
-                              storageProvider: s.storageProvider,
-                              name: s.name.trim(),
-                              embedUrl: (
-                                s.playbackUrl ??
-                                s.embedUrl ??
-                                ""
-                              ).trim(),
-                              playbackUrl: s.playbackUrl?.trim() || null,
-                              objectKey: s.objectKey?.trim() || null,
-                              subtitleUrl: s.subtitleUrl?.trim() || null,
-                              vastTagUrl: s.vastTagUrl?.trim() || null,
-                              mimeType: s.mimeType?.trim() || null,
-                              fileSizeBytes: s.fileSizeBytes ?? null,
-                              durationSeconds: s.durationSeconds ?? null,
-                              priority: s.priority ?? i,
-                              isActive: s.isActive ?? true,
-                            })),
-                          }
-                        : undefined,
-                  })),
-                }
-              : undefined,
         },
       });
+      // 4. Tạo từng tập rồi tạo server cho tập đó (episode tồn tại trước khi tạo server)
+      for (const ep of data.episodes) {
+        const created = await tx.episode.create({
+          data: {
+            movieId: current.id,
+            episodeNumber: ep.episodeNumber,
+            watchSlug: `tap-${ep.episodeNumber}`,
+            name: ep.name?.trim() || `Tập ${ep.episodeNumber}`,
+            subtitleUrl: ep.subtitleUrl?.trim() || null,
+          },
+        });
+        if (ep.servers.length > 0) {
+          await tx.server.createMany({
+            data: ep.servers.map((s: (typeof ep.servers)[number], i: number) => ({
+              episodeId: created.id,
+              name: s.name.trim(),
+              embedUrl: (s.playbackUrl ?? s.embedUrl ?? "").trim(),
+              playbackUrl: s.playbackUrl?.trim() || null,
+              objectKey: s.objectKey?.trim() || null,
+              sourceType: s.sourceType,
+              storageProvider: s.storageProvider,
+              subtitleUrl: s.subtitleUrl?.trim() || null,
+              vastTagUrl: s.vastTagUrl?.trim() || null,
+              mimeType: s.mimeType?.trim() || null,
+              fileSizeBytes: s.fileSizeBytes ?? null,
+              durationSeconds: s.durationSeconds ?? null,
+              priority: s.priority ?? i,
+              isActive: s.isActive ?? true,
+            })),
+          });
+        }
+      }
     });
 
     const movie = await prisma.movie.findUnique({

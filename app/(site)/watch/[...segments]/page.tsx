@@ -23,9 +23,13 @@ export async function generateMetadata({
 }: WatchCatchAllPageProps): Promise<Metadata> {
   const { segments } = await params;
   if (!Array.isArray(segments) || segments.length !== 3) return {};
-  const [channel, movieSlug] = segments;
+  const [channel, pathMovieSlug] = segments;
+  const ch = channel ?? "";
   const movie = await prisma.movie.findFirst({
-    where: { slug: movieSlug, channel: channel ?? undefined },
+    where: {
+      channel: ch,
+      slug: { in: [pathMovieSlug, `${ch}-${pathMovieSlug}`] },
+    },
     select: { title: true },
   });
   if (!movie) return {};
@@ -101,12 +105,15 @@ async function handleLegacySlug(slug: string) {
 }
 
 async function handleTreePath(parts: string[]) {
-  const [channel, movieSlug, episodeSlug] = parts;
+  const [channel, pathMovieSlug, episodeSlug] = parts;
   const episodeNumber = parseEpisodeSlug(episodeSlug);
   if (!episodeNumber) notFound();
 
   const movie = await prisma.movie.findFirst({
-    where: { slug: movieSlug, channel },
+    where: {
+      channel,
+      slug: { in: [pathMovieSlug, `${channel}-${pathMovieSlug}`] },
+    },
     include: {
       episodes: {
         orderBy: { episodeNumber: "asc" },

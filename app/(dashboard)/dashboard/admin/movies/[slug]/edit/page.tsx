@@ -412,6 +412,30 @@ export default function EditMoviePage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!slug) return;
+
+    // Validate trùng số tập trên client để báo lỗi rõ ràng trước khi gọi API
+    if (episodes.length > 0) {
+      const seen = new Set<number>();
+      const dup = new Set<number>();
+      episodes.forEach((ep: EpisodeRow) => {
+        const num = ep.episodeNumber;
+        if (seen.has(num)) {
+          dup.add(num);
+        } else {
+          seen.add(num);
+        }
+      });
+      if (dup.size > 0) {
+        addToast(
+          "error",
+          `Số tập bị trùng: ${Array.from(dup)
+            .sort((a: number, b: number) => a - b)
+            .join(", ")}. Mỗi tập phải có số khác nhau.`,
+        );
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -568,7 +592,6 @@ export default function EditMoviePage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="channel">Channel</Label>
               <Select
                 id="channel"
                 label="Channel"
@@ -894,7 +917,9 @@ export default function EditMoviePage() {
                           <Input
                             type="text"
                             value={srv.name}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) =>
                               updateServer(
                                 ep.id,
                                 srv.id,
@@ -908,7 +933,9 @@ export default function EditMoviePage() {
                           <Input
                             type="url"
                             value={srv.embedUrl}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) =>
                               updateServer(
                                 ep.id,
                                 srv.id,

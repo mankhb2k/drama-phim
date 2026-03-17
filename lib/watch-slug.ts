@@ -18,13 +18,23 @@ export function buildWatchSlug(movieSlug: string, episodeNumber: number): string
   return `${movieSlug}-${buildEpisodeSlug(episodeNumber)}`;
 }
 
-/** Đường dẫn xem phim dạng tree (chuẩn mới). */
+/**
+ * Slug phim dùng trong path watch: bỏ prefix channel để tránh trùng (watch/nsh/phim1 thay vì watch/nsh/nsh-phim1).
+ */
+export function getWatchPathMovieSlug(movieSlug: string, channel: string): string {
+  const prefix = channel + "-";
+  if (movieSlug.startsWith(prefix)) return movieSlug.slice(prefix.length);
+  return movieSlug;
+}
+
+/** Đường dẫn xem phim dạng tree (chuẩn mới). Dùng slug không prefix trong path. */
 export function buildWatchHrefTree(
   channel: string,
   movieSlug: string,
   episodeSlug: string,
 ): string {
-  return `/watch/${channel}/${movieSlug}/${episodeSlug}`;
+  const pathSlug = getWatchPathMovieSlug(movieSlug, channel);
+  return `/watch/${channel}/${pathSlug}/${episodeSlug}`;
 }
 
 /** Đường dẫn xem phim mặc định dạng tree, tương thích callsite cũ. */
