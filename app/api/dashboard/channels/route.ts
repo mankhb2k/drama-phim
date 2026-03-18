@@ -28,9 +28,9 @@ export async function GET() {
     await prisma.channel.upsert({
       where: { slug: DEFAULT_CHANNEL_SLUG },
       create: {
-      slug: DEFAULT_CHANNEL_SLUG,
-      name: DEFAULT_CHANNEL_SLUG === "dramahd" ? "DramaHD" : DEFAULT_CHANNEL_SLUG.toUpperCase(),
-    },
+        slug: DEFAULT_CHANNEL_SLUG,
+        name: "DramaHD",
+      },
       update: {},
     });
     const channels = await prisma.channel.findMany({
