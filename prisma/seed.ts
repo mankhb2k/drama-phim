@@ -91,27 +91,29 @@ async function main() {
   });
   console.log("✅ Tags seeded");
 
-  // --- Labels mẫu ---
+  // --- Labels mẫu (Hot / Mới dùng cho section Đang hot & Mới cập nhật trên trang chủ) ---
   await db.label.createMany({
     data: [
+      { slug: "hot", name: "Hot", order: 0, textColor: null, backgroundColor: null },
+      { slug: "moi", name: "Mới", order: 1, textColor: null, backgroundColor: null },
       {
         slug: "full-hd",
         name: "Full HD",
-        order: 1,
+        order: 2,
         textColor: null,
         backgroundColor: null,
       },
       {
         slug: "sub-viet",
         name: "Sub Việt",
-        order: 2,
+        order: 3,
         textColor: null,
         backgroundColor: null,
       },
       {
         slug: "ban-dep",
         name: "Bản đẹp",
-        order: 3,
+        order: 4,
         textColor: null,
         backgroundColor: null,
       },

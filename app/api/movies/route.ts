@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-/** GET /api/movies — Danh sách phim (query: status?, limit?, offset?, orderBy?) */
+/** GET /api/movies — Danh sách phim (query: status?, limit?, offset?, orderBy?, labelSlug?) */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
+    const labelSlug = searchParams.get("labelSlug")?.trim();
     const limit = Math.min(Number(searchParams.get("limit")) || 20, 50);
     const offset = Number(searchParams.get("offset")) || 0;
     const orderByParam = searchParams.get("orderBy") ?? "updatedAt";
 
-    const where =
-      status === "ONGOING" || status === "COMPLETED"
-        ? { status: status as "ONGOING" | "COMPLETED" }
-        : {};
+    const where: { status?: "ONGOING" | "COMPLETED"; labels?: { some: { slug: string } } } = {};
+    if (status === "ONGOING" || status === "COMPLETED") where.status = status;
+    if (labelSlug) where.labels = { some: { slug: labelSlug } };
 
     const orderBy =
       orderByParam === "views"

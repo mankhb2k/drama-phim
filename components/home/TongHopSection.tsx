@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { MovieCard } from "@/components/movie/MovieCard";
 import { Button } from "@/components/ui";
 
-const PAGE_SIZE = 12;
+/** Ít nhất 2 hàng đầy trên desktop (10 cột) trước khi hiện "Xem thêm" */
+const PAGE_SIZE = 24;
 
 type MovieItem = {
   slug: string;
@@ -13,7 +14,11 @@ type MovieItem = {
   year: number | null;
   status: "ONGOING" | "COMPLETED";
   episodes: number;
-  labels?: Array<{ name: string; textColor?: string | null; backgroundColor?: string | null }>;
+  labels?: Array<{
+    name: string;
+    textColor?: string | null;
+    backgroundColor?: string | null;
+  }>;
 };
 
 type ApiResponse = {
@@ -76,7 +81,7 @@ export function TongHopSection() {
           <p className="text-sm text-muted-foreground">Chưa có phim nào.</p>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-10 sm:gap-3">
               {items.map((movie: MovieItem) => (
                 <MovieCard
                   key={movie.slug}

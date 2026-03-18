@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { getBaseUrl, getCanonicalUrl } from "@/lib/site-url";
+import { prisma } from "@/lib/prisma";
 
 const SITE_DESCRIPTION =
   "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.";
@@ -42,81 +43,9 @@ const featuredMovie = {
   episodes: 16,
 };
 
-const trendingMovies = [
-  {
-    slug: "tu-than",
-    title: "Tử Thần",
-    year: 2024,
-    episodes: 20,
-    status: "ONGOING" as const,
-  },
-  {
-    slug: "hon-ma",
-    title: "Hồn Ma",
-    year: 2024,
-    episodes: 16,
-    status: "COMPLETED" as const,
-  },
-  {
-    slug: "chiec-bong",
-    title: "Chiếc Bóng",
-    year: 2023,
-    episodes: 24,
-    status: "COMPLETED" as const,
-  },
-  {
-    slug: "bong-toi",
-    title: "Bóng Tối",
-    year: 2024,
-    episodes: 12,
-    status: "ONGOING" as const,
-  },
-  {
-    slug: "dem-dai",
-    title: "Đêm Dài",
-    year: 2023,
-    episodes: 18,
-    status: "COMPLETED" as const,
-  },
-];
-
-const newUpdates = [
-  {
-    slug: "nu-hon",
-    title: "Nụ Hôn Định Mệnh",
-    year: 2024,
-    episodes: 8,
-    status: "ONGOING" as const,
-  },
-  {
-    slug: "song-sinh",
-    title: "Song Sinh",
-    year: 2024,
-    episodes: 6,
-    status: "ONGOING" as const,
-  },
-  {
-    slug: "ao-anh",
-    title: "Ảo Ảnh",
-    year: 2024,
-    episodes: 10,
-    status: "ONGOING" as const,
-  },
-  {
-    slug: "gio-mua",
-    title: "Gió Mùa",
-    year: 2024,
-    episodes: 4,
-    status: "ONGOING" as const,
-  },
-  {
-    slug: "canh-bac",
-    title: "Cánh Bắc",
-    year: 2023,
-    episodes: 16,
-    status: "COMPLETED" as const,
-  },
-];
+/** Slug nhãn cho section Đang hot và Mới cập nhật (tạo trong Dashboard → Tag & Nhãn) */
+const LABEL_SLUG_HOT = "hot";
+const LABEL_SLUG_MOI = "moi";
 
 function SectionHeader({
   title,
@@ -141,29 +70,35 @@ function SectionHeader({
   );
 }
 
+type MovieRowItem = {
+  slug: string;
+  title: string;
+  poster?: string | null;
+  year?: number | null;
+  episodes?: number;
+  status?: "ONGOING" | "COMPLETED";
+  labels?: Array<{ name: string; textColor?: string | null; backgroundColor?: string | null }>;
+};
+
 function MovieRow({
   movies,
   variant = "default",
 }: {
-  movies: Array<{
-    slug: string;
-    title: string;
-    year?: number;
-    episodes?: number;
-    status?: "ONGOING" | "COMPLETED";
-  }>;
+  movies: MovieRowItem[];
   variant?: "default" | "compact";
 }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:gap-4 scrollbar-hide">
-      {movies.map((movie: (typeof movies)[number]) => (
+      {movies.map((movie: MovieRowItem) => (
         <MovieCard
           key={movie.slug}
           slug={movie.slug}
           title={movie.title}
+          poster={movie.poster}
           year={movie.year}
           episodes={movie.episodes}
           status={movie.status}
+          labels={movie.labels}
           variant={variant}
           className="w-[8rem] min-w-[8rem] sm:min-w-0 sm:w-40"
         />
@@ -180,7 +115,57 @@ const homePageJsonLd = {
   description: SITE_DESCRIPTION,
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [hotMovies, newMovies] = await Promise.all([
+    prisma.movie.findMany({
+      where: { labels: { some: { slug: LABEL_SLUG_HOT } } },
+      orderBy: { views: "desc" },
+      take: 12,
+      select: {
+        slug: true,
+        title: true,
+        poster: true,
+        year: true,
+        status: true,
+        labels: { select: { name: true, textColor: true, backgroundColor: true } },
+        _count: { select: { episodes: true } },
+      },
+    }),
+    prisma.movie.findMany({
+      where: { labels: { some: { slug: LABEL_SLUG_MOI } } },
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+      select: {
+        slug: true,
+        title: true,
+        poster: true,
+        year: true,
+        status: true,
+        labels: { select: { name: true, textColor: true, backgroundColor: true } },
+        _count: { select: { episodes: true } },
+      },
+    }),
+  ]);
+
+  const hotRows = hotMovies.map((m: (typeof hotMovies)[number]) => ({
+    slug: m.slug,
+    title: m.title,
+    poster: m.poster,
+    year: m.year,
+    status: m.status,
+    episodes: m._count.episodes,
+    labels: m.labels,
+  }));
+  const newRows = newMovies.map((m: (typeof newMovies)[number]) => ({
+    slug: m.slug,
+    title: m.title,
+    poster: m.poster,
+    year: m.year,
+    status: m.status,
+    episodes: m._count.episodes,
+    labels: m.labels,
+  }));
+
   return (
     <>
       <script
@@ -209,13 +194,13 @@ export default function HomePage() {
           href="/phim-hot"
         />
         <div className="mt-4">
-          <MovieRow movies={trendingMovies} />
+          <MovieRow movies={hotRows} />
         </div>
       </section>
       <section>
         <SectionHeader title="Mới cập nhật" href="/phim-moi" />
         <div className="mt-4">
-          <MovieRow movies={newUpdates} />
+          <MovieRow movies={newRows} />
         </div>
       </section>
       <TongHopSection />

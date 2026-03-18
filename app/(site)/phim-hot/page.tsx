@@ -13,10 +13,13 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 24;
+/** Chỉ lấy phim có gắn nhãn Hot (slug = "hot" trong Dashboard → Tag & Nhãn) */
+const LABEL_SLUG_HOT = "hot";
 
 export default async function PhimHotPage() {
   const [movies, total] = await Promise.all([
     prisma.movie.findMany({
+      where: { labels: { some: { slug: LABEL_SLUG_HOT } } },
       orderBy: { views: "desc" },
       take: PAGE_SIZE,
       include: {
@@ -24,7 +27,7 @@ export default async function PhimHotPage() {
         labels: { select: { name: true, textColor: true, backgroundColor: true } },
       },
     }),
-    prisma.movie.count(),
+    prisma.movie.count({ where: { labels: { some: { slug: LABEL_SLUG_HOT } } } }),
   ]);
 
   return (
@@ -34,7 +37,7 @@ export default async function PhimHotPage() {
           Phim đang hot
         </h1>
         <p className="mt-1 text-muted-foreground">
-          {total} phim — sắp xếp theo lượt xem
+          {total} phim có nhãn Hot — sắp xếp theo lượt xem
         </p>
       </div>
 

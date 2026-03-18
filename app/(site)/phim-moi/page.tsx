@@ -13,10 +13,13 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 24;
+/** Chỉ lấy phim có gắn nhãn Mới (slug = "moi" trong Dashboard → Tag & Nhãn) */
+const LABEL_SLUG_MOI = "moi";
 
 export default async function PhimMoiPage() {
   const [movies, total] = await Promise.all([
     prisma.movie.findMany({
+      where: { labels: { some: { slug: LABEL_SLUG_MOI } } },
       orderBy: { updatedAt: "desc" },
       take: PAGE_SIZE,
       include: {
@@ -24,7 +27,7 @@ export default async function PhimMoiPage() {
         labels: { select: { name: true, textColor: true, backgroundColor: true } },
       },
     }),
-    prisma.movie.count(),
+    prisma.movie.count({ where: { labels: { some: { slug: LABEL_SLUG_MOI } } } }),
   ]);
 
   return (
@@ -34,7 +37,7 @@ export default async function PhimMoiPage() {
           Phim mới cập nhật
         </h1>
         <p className="mt-1 text-muted-foreground">
-          {total} phim — mới cập nhật gần đây
+          {total} phim có nhãn Mới — mới cập nhật gần đây
         </p>
       </div>
 
