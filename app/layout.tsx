@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "DramaHD - Xem phim online miễn phí",
   description:
     "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.",
+  icons: {
+    icon: "/favicon-dramahd.svg",
+    apple: "/favicon-dramahd.svg",
+  },
   other: {
     "6a97888e-site-verification": "faedaa45f9f5abf74cebda0724a8a98d",
   },
