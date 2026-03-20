@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     "Xem phim online miễn phí, chất lượng cao. Phim bộ, phim lẻ, hoạt hình mới cập nhật mỗi ngày.",
   icons: {
     icon: "/favicon-dramahd.svg",
+    shortcut: "/favicon.ico",
     apple: "/favicon-dramahd.svg",
   },
   other: {
@@ -34,6 +35,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="dark" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon-dramahd.svg" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
         suppressHydrationWarning
